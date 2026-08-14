@@ -1,0 +1,15 @@
+{
+  "schema": "wellmanifest.hostguard/interview/v1",
+  "subject_id": "linux.generic.host",
+  "purpose": "A process is high in top; classify before calling it a threat.",
+  "host_kind": "linux-generic",
+  "probe_interval_seconds": 30,
+  "signals": ["cpu", "ram"],
+  "probe_source": "live-host",
+  "allowlist_comms": ["python"],
+  "instance_cgroups": ["app.slice"],
+  "kill_granted": false,
+  "visible_kill_control": false,
+  "treat_top_as_threat": true,
+  "analyzer_or_top_noise": false
+}

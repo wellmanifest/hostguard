@@ -1,0 +1,264 @@
+{
+  "$schema": "https://wellmanifest.dev/schemas/dsl-manifest/v1",
+  "schema": "wellmanifest.dsl/manifest/v1",
+  "id": "wellmanifest.hostguard",
+  "name": "Wellmanifest hostguard policy DSL",
+  "version": "0.1.0-dev",
+  "status": "experimental",
+  "purpose": "Interview-driven classification of host process threats into propose-only observe/warn/ticket/kill-grant policies",
+  "domain": "host-process-threat",
+  "owners": [
+    {
+      "kind": "repository",
+      "id": "github:wellmanifest/hostguard",
+      "responsibilities": ["semantics", "validation", "compatibility"]
+    }
+  ],
+  "source": {
+    "repository": "https://github.com/wellmanifest/hostguard",
+    "path": "schemas/hostguard-policy.schema.json",
+    "declaredVersion": "1",
+    "canonical": "json-ast",
+    "mediaType": "application/schema+json",
+    "selectors": []
+  },
+  "ownedPaths": [
+    "dsl-manifest.json",
+    "schemas/**",
+    "questions/**",
+    "docs/**",
+    "src/hostguard.py",
+    "examples/**"
+  ],
+  "artifacts": [
+    {
+      "path": "schemas/hostguard-policy.schema.json",
+      "role": "normative-source",
+      "digest": "sha256:bb0e8764d60b5ea3395dfe9a4a9e87e3fd5fc743cdb1739081a801d20fad01af"
+    },
+    {
+      "path": "schemas/hostguard-interview.schema.json",
+      "role": "schema",
+      "digest": "sha256:29f12fc3704206bc3890b20f3054601db9cfb3830dfd273c304b9e8d4ffa6e64"
+    },
+    {
+      "path": "questions/interview.json",
+      "role": "profile",
+      "digest": "sha256:ee9baac2a5783cf32f53698de9c7a7068a195057682a5dd57b039c8634460488"
+    },
+    {
+      "path": "src/hostguard.py",
+      "role": "parser-contract",
+      "digest": "sha256:ba437993386325c1fabfd86bfd21bd06126d38d27671cce531baf1e33a65d776"
+    },
+    {
+      "path": "docs/HOSTGUARD.md",
+      "role": "documentation",
+      "digest": "sha256:b4c70649f957d3efed0725760c7d67ed23e434e7c9b522a0c8ded0ae3a3b1f6b"
+    },
+    {
+      "path": "docs/INTERVIEW.md",
+      "role": "documentation",
+      "digest": "sha256:0c292c3c442485ffdda64450d3527c5b4335d7ac7d0f817183c41b17a50aa20d"
+    },
+    {
+      "path": "docs/CLASSIFY.md",
+      "role": "documentation",
+      "digest": "sha256:c0fd74715387a1de51e20dcd3581949805c23e85e80713a20ea52b1110a03084"
+    },
+    {
+      "path": "docs/SUGGEST.md",
+      "role": "documentation",
+      "digest": "sha256:e84c4af3ae86e2d3a7474331daa12764d320474474e11d21ac8e6fe09e791d3e"
+    },
+    {
+      "path": "docs/VALIDATE.md",
+      "role": "documentation",
+      "digest": "sha256:67a9ba92846d9f43419580a99c55b50b5bc1e4fde058d3fb56b5d9577a1537ea"
+    },
+    {
+      "path": "docs/MAPPING.md",
+      "role": "documentation",
+      "digest": "sha256:e42d49e64d65ebc27ad0777df38b94d3fde4a318549fb50e6f0cead7afdd54f8"
+    },
+    {
+      "path": "docs/ERROR/HG-KIND-001.md",
+      "role": "documentation",
+      "digest": "sha256:83664e62c9bc2199e8c03a4b8b40b41e8d961c1c77e10f3658c84b704b07a35d"
+    },
+    {
+      "path": "docs/ERROR/HG-GRANT-001.md",
+      "role": "documentation",
+      "digest": "sha256:1332a7afca83554344e80af0a74c988dc2098a828824399b55e0e119b66e92ab"
+    },
+    {
+      "path": "docs/ERROR/HG-PID1-001.md",
+      "role": "documentation",
+      "digest": "sha256:100adae91637b370f3eab999e74a071e01965bb749a3dc0cc42db178d1cd96b5"
+    },
+    {
+      "path": "docs/ERROR/HG-INTERVAL-001.md",
+      "role": "documentation",
+      "digest": "sha256:e180b32dd5b196539cc768e0a7348a99423a2b5580ca185752a2c9bff44f2531"
+    },
+    {
+      "path": "docs/ERROR/HG-CLASSIFY-001.md",
+      "role": "documentation",
+      "digest": "sha256:0d333ccf967c01f15d4dc64d6e730878eb69d2b4fccd576f257d05766de10b7c"
+    },
+    {
+      "path": "docs/ERROR/HG-POA-001.md",
+      "role": "documentation",
+      "digest": "sha256:2aed36e63c33c8c0518f6b0c59b773d98b1ae4a11c3acc6c02264ffa921d7595"
+    },
+    {
+      "path": "docs/ERROR/HG-SERVE-001.md",
+      "role": "documentation",
+      "digest": "sha256:78435d6cd7cacc397e103554bc38a7257db58be6031b5c82aa1c1dc8638fb547"
+    },
+    {
+      "path": "docs/ERROR/HG-NOISE-001.md",
+      "role": "documentation",
+      "digest": "sha256:e7e8aa58b64ae74edcbfe94f2ae7a8646d5f099ed03bd2f0c82d44eebbcc73a2"
+    },
+    {
+      "path": "docs/ERROR/HG-UNKNOWN-001.md",
+      "role": "documentation",
+      "digest": "sha256:b18178c67e7e5f133f584076dea8b954f7dd9420046f0c6a1df23d6353606a5d"
+    },
+    {
+      "path": "docs/CRITICAL/HG-KILL-001.md",
+      "role": "documentation",
+      "digest": "sha256:ae5a9028c9771f279bf53f6b329367795f30b12047dbcf8ae49cfc0cf2311853"
+    },
+    {
+      "path": "examples/linux-host.hostguard.json",
+      "role": "example",
+      "digest": "sha256:aeb1feee8428ed58673f928a9d71ba1d2f149e4fbe6dcee5e3a045295771e4fa"
+    },
+    {
+      "path": "examples/linux-host.hostguard.dsl",
+      "role": "example",
+      "digest": "sha256:e0ec100a4888433f6fe9c1cb094e9f9623bced030882b9b67f91b4f514920093"
+    }
+  ],
+  "namespaces": [
+    { "prefix": "wellmanifest", "uri": "https://wellmanifest.dev/" },
+    { "prefix": "hostguard", "uri": "https://wellmanifest.dev/hostguard/" }
+  ],
+  "projections": [
+    {
+      "name": "document-hostguard-text",
+      "mediaType": "text/plain",
+      "direction": "bidirectional",
+      "lossless": true
+    }
+  ],
+  "lifecycle": {
+    "compatibility": "semver",
+    "stability": "experimental",
+    "breaking": "major",
+    "additive": "minor",
+    "fix": "patch"
+  },
+  "semantics": {
+    "effectModel": "propose-only",
+    "unknownPolicy": "reject",
+    "authoritySchema": null
+  },
+  "llm": {
+    "mode": "none",
+    "requestSchemas": [],
+    "responseSchemas": [],
+    "naturalLanguage": "typed-source-only",
+    "sourceSchema": "wellmanifest.hostguard/interview/v1",
+    "modelAuthority": "none",
+    "strict": true
+  },
+  "documentation": {
+    "vocabularyKind": "commands",
+    "commandRoot": "docs",
+    "errorRoot": "docs/ERROR",
+    "criticalRoot": "docs/CRITICAL",
+    "commands": ["HOSTGUARD", "INTERVIEW", "CLASSIFY", "SUGGEST", "VALIDATE"],
+    "errorCodes": [
+      "HG-KIND-001",
+      "HG-GRANT-001",
+      "HG-PID1-001",
+      "HG-INTERVAL-001",
+      "HG-CLASSIFY-001",
+      "HG-POA-001",
+      "HG-SERVE-001",
+      "HG-NOISE-001",
+      "HG-UNKNOWN-001"
+    ],
+    "criticalCodes": ["HG-KILL-001"]
+  },
+  "findingPolicy": {
+    "schema": "wellmanifest.dsl/findings/v1",
+    "requiredProducers": ["wellmanifest.hostguard.validator"],
+    "securityProducers": ["wellmanifest.hostguard.validator"],
+    "blockingSeverities": ["critical"],
+    "requireEvaluable": true,
+    "blockUnresolvedSecurity": true
+  },
+  "publicationPolicy": {
+    "declaredTier": "review",
+    "deterministic": true,
+    "independentReview": true,
+    "externalAuthority": false,
+    "runtimeIsolation": false
+  },
+  "conformance": {
+    "levels": ["manifest", "contract", "runtime"],
+    "commands": [
+      "PYTHONPATH=src python3 -m hostguard validate examples/linux-host.hostguard.json",
+      "PYTHONPATH=src python3 -m unittest discover -s tests"
+    ],
+    "validExamples": ["examples/linux-host.hostguard.json"],
+    "invalidExamples": ["examples/invalid/missing-interval.hostguard.json"]
+  },
+  "mappings": [
+    {
+      "standard": "wellmanifest.dsl",
+      "version": "0.1.0-dev",
+      "relation": "implements",
+      "uri": "https://github.com/wellmanifest/dsl"
+    },
+    {
+      "standard": "wellmanifest.logs",
+      "version": "0.2.0-dev",
+      "relation": "compatible-with",
+      "uri": "https://github.com/wellmanifest/logs"
+    },
+    {
+      "standard": "wellmanifest.poa",
+      "version": "0.1.0-dev",
+      "relation": "compatible-with",
+      "uri": "https://github.com/wellmanifest/poa"
+    },
+    {
+      "standard": "wellmanifest.new-project",
+      "version": "0.17.0",
+      "relation": "compatible-with",
+      "uri": "https://github.com/wellmanifest/new-project"
+    }
+  ],
+  "standardsLock": {
+    "schema": "wellmanifest.standards-lock/v1",
+    "entries": [
+      {
+        "standard": "wellmanifest.dsl",
+        "version": "0.1.0-dev",
+        "repository": "https://github.com/wellmanifest/dsl",
+        "revision": "b7d0595c95e5abbb48ebfdbdae0bc6d43c6f82f4",
+        "contracts": [
+          {
+            "ref": "schema://wellmanifest.dev/dsl/manifest/v1",
+            "digest": "sha256:34d356b76bbd483372df84bb986e15bb84e9c1f8b11b7dc9e3a6c7276c85ed13"
+          }
+        ]
+      }
+    ]
+  }
+}

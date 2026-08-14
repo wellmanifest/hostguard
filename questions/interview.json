@@ -1,0 +1,84 @@
+{
+  "schema": "wellmanifest.hostguard/interview/v1",
+  "id": "wellmanifest.hostguard.interview",
+  "version": "0.1.0",
+  "purpose": "Classify host process resource signals before warn, ticket, or a granted kill.",
+  "questions": [
+    {
+      "id": "subject_id",
+      "prompt": "What should we call this host policy? (stable id, e.g. linux.generic.host)",
+      "type": "identifier",
+      "required": true
+    },
+    {
+      "id": "purpose",
+      "prompt": "One sentence: what instance are you protecting from runaway host processes?",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "host_kind",
+      "prompt": "What kind of host is this? (linux-generic, container, vm)",
+      "type": "enum",
+      "choices": ["linux-generic", "container", "vm"],
+      "required": true
+    },
+    {
+      "id": "probe_interval_seconds",
+      "prompt": "How many seconds between cyclic probes? (integer, minimum 5; stored in the document, not hardcoded)",
+      "type": "integer",
+      "minimum": 5,
+      "required": true
+    },
+    {
+      "id": "signals",
+      "prompt": "Which signals should the probe inspect? (comma-separated: cpu, ram, storage, power, fd, inode, zombie, fork_bomb, runaway)",
+      "type": "enum-list",
+      "choices": ["cpu", "ram", "storage", "power", "fd", "inode", "zombie", "fork_bomb", "runaway"],
+      "required": true
+    },
+    {
+      "id": "probe_source",
+      "prompt": "Where does the snapshot come from? (live-host or injected-snapshot — never editor-view)",
+      "type": "enum",
+      "choices": ["live-host", "injected-snapshot"],
+      "required": true
+    },
+    {
+      "id": "allowlist_comms",
+      "prompt": "Process comm names that belong to the instance (comma-separated, e.g. systemd, nginx).",
+      "type": "string-list",
+      "required": false
+    },
+    {
+      "id": "instance_cgroups",
+      "prompt": "cgroup path fragments that belong to the instance (comma-separated).",
+      "type": "string-list",
+      "required": false
+    },
+    {
+      "id": "kill_granted",
+      "prompt": "Is capability://hostguard/kill/v1 explicitly granted? Default must be no.",
+      "type": "bool",
+      "required": true
+    },
+    {
+      "id": "visible_kill_control",
+      "prompt": "Is there a visible Kill button that an operator might mistake for a grant?",
+      "type": "bool",
+      "required": true
+    },
+    {
+      "id": "treat_top_as_threat",
+      "prompt": "Should a high number in top be treated as a threat before classification?",
+      "type": "bool",
+      "required": true
+    },
+    {
+      "id": "analyzer_or_top_noise",
+      "prompt": "Is the current report analyzer or top noise rather than a confirmed foreign process?",
+      "type": "bool",
+      "required": true
+    }
+  ]
+}

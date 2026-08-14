@@ -1,0 +1,15 @@
+{
+  "schema": "wellmanifest.hostguard/interview/v1",
+  "subject_id": "linux.generic.host",
+  "purpose": "Protect a generic Linux host running a subactor instance from runaway processes.",
+  "host_kind": "linux-generic",
+  "probe_interval_seconds": 30,
+  "signals": ["cpu", "ram", "storage", "power", "fd", "inode", "zombie", "fork_bomb", "runaway"],
+  "probe_source": "live-host",
+  "allowlist_comms": ["systemd", "sshd", "nginx"],
+  "instance_cgroups": ["system.slice"],
+  "kill_granted": false,
+  "visible_kill_control": false,
+  "treat_top_as_threat": false,
+  "analyzer_or_top_noise": false
+}

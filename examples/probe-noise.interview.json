@@ -1,0 +1,14 @@
+{
+  "schema": "wellmanifest.hostguard/interview/v1",
+  "subject_id": "linux.generic.host",
+  "purpose": "Top noise is not operational debt.",
+  "host_kind": "linux-generic",
+  "probe_interval_seconds": 60,
+  "signals": ["cpu"],
+  "probe_source": "live-host",
+  "allowlist_comms": ["systemd"],
+  "kill_granted": false,
+  "visible_kill_control": false,
+  "treat_top_as_threat": false,
+  "analyzer_or_top_noise": true
+}

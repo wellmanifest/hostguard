@@ -1,0 +1,14 @@
+{
+  "schema": "wellmanifest.hostguard/interview/v1",
+  "subject_id": "linux.generic.host",
+  "purpose": "An operator sees a Kill button and must not treat chrome as a grant.",
+  "host_kind": "linux-generic",
+  "probe_interval_seconds": 30,
+  "signals": ["cpu", "ram", "runaway"],
+  "probe_source": "live-host",
+  "allowlist_comms": ["systemd"],
+  "kill_granted": false,
+  "visible_kill_control": true,
+  "treat_top_as_threat": false,
+  "analyzer_or_top_noise": false
+}

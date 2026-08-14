@@ -1,0 +1,56 @@
+{
+  "schema": "wellmanifest.hostguard/policy/v1",
+  "id": "linux.generic.host",
+  "version": "0.1.0",
+  "probe": {
+    "intervalSeconds": 30,
+    "source": "live-host",
+    "signals": ["cpu"]
+  },
+  "policy": {
+    "unknownPolicy": "reject",
+    "effectModel": "observe-default",
+    "defaultAction": "observe",
+    "escalation": ["observe", "warn", "ticket", "escalate"],
+    "kill": {
+      "capability": "capability://other/kill/v1",
+      "granted": true,
+      "never": ["pid:1", "guardian_self", "allowlisted_instance"]
+    },
+    "forbid": [
+      "kill_pid_1",
+      "kill_guardian_self",
+      "kill_allowlisted_instance",
+      "treat_top_as_threat",
+      "treat_editor_as_host",
+      "treat_visible_kill_as_grant",
+      "treat_probe_noise_as_debt"
+    ]
+  },
+  "allowlist": [],
+  "thresholds": {"cpuPercent": 90},
+  "classifications": [
+    {
+      "id": "inventory-vs-runtime",
+      "kind": "inventory_vs_runtime",
+      "rationale": "Classify before threat.",
+      "actions": [{"do": "classify_before_threat"}],
+      "forbid": ["treat_top_as_threat"]
+    },
+    {
+      "id": "served-artifact",
+      "kind": "served_artifact",
+      "rationale": "Probe the live host.",
+      "actions": [{"do": "probe_live_host"}],
+      "forbid": ["treat_editor_as_host"]
+    },
+    {
+      "id": "capability-surface",
+      "kind": "capability_surface",
+      "rationale": "Chrome is not a grant.",
+      "actions": [{"do": "require_kill_grant"}],
+      "forbid": ["treat_visible_kill_as_grant"]
+    }
+  ],
+  "questions": []
+}

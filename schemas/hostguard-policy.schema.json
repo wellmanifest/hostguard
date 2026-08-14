@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wellmanifest.dev/schemas/hostguard/policy/v1",
+  "title": "Wellmanifest hostguard policy document v1",
+  "description": "Canonical host-threat policy. Propose-only: the document never probes a host or authorizes a kill. The implementing product is subactor/hostguard.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "version", "probe", "policy", "allowlist", "thresholds", "classifications", "questions"],
+  "properties": {
+    "$schema": { "type": "string", "format": "uri" },
+    "schema": { "const": "wellmanifest.hostguard/policy/v1" },
+    "id": { "$ref": "#/$defs/identifier" },
+    "version": { "$ref": "#/$defs/semver" },
+    "purpose": { "type": "string", "minLength": 1, "maxLength": 400 },
+    "probe": { "$ref": "#/$defs/probe" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "allowlist": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/allowlistEntry" }
+    },
+    "thresholds": { "$ref": "#/$defs/thresholds" },
+    "classifications": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/classification" }
+    },
+    "questions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 400 }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "signal": {
+      "enum": ["cpu", "ram", "storage", "power", "fd", "inode", "zombie", "fork_bomb", "runaway"]
+    },
+    "kind": {
+      "enum": [
+        "inventory_vs_runtime",
+        "served_artifact",
+        "capability_surface",
+        "allowlisted_instance",
+        "guardian_self",
+        "init_pid",
+        "runaway_process",
+        "resource_pressure",
+        "fork_bomb",
+        "zombie_storm",
+        "probe_noise",
+        "unknown_process"
+      ]
+    },
+    "actionDo": {
+      "enum": [
+        "observe",
+        "warn",
+        "write_ticket",
+        "escalate",
+        "propose_kill",
+        "refuse_kill",
+        "ask_clarifying_questions",
+        "classify_before_threat",
+        "probe_live_host",
+        "require_kill_grant",
+        "ignore_probe_noise"
+      ]
+    },
+    "forbidDo": {
+      "enum": [
+        "kill_without_grant",
+        "kill_pid_1",
+        "kill_guardian_self",
+        "kill_allowlisted_instance",
+        "treat_top_as_threat",
+        "treat_editor_as_host",
+        "treat_visible_kill_as_grant",
+        "treat_probe_noise_as_debt"
+      ]
+    },
+    "probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intervalSeconds", "source", "signals"],
+      "properties": {
+        "intervalSeconds": { "type": "integer", "minimum": 5, "maximum": 86400 },
+        "source": { "enum": ["live-host", "injected-snapshot"] },
+        "signals": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/signal" }
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unknownPolicy", "effectModel", "defaultAction", "escalation", "kill", "forbid"],
+      "properties": {
+        "unknownPolicy": { "const": "reject" },
+        "effectModel": { "const": "observe-default" },
+        "defaultAction": { "const": "observe" },
+        "escalation": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "enum": ["observe", "warn", "ticket", "escalate"] }
+        },
+        "kill": { "$ref": "#/$defs/kill" },
+        "forbid": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/forbidDo" }
+        }
+      }
+    },
+    "kill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capability", "granted", "never"],
+      "properties": {
+        "capability": { "const": "capability://hostguard/kill/v1" },
+        "granted": { "type": "boolean" },
+        "never": {
+          "type": "array",
+          "minItems": 3,
+          "items": { "enum": ["pid:1", "guardian_self", "allowlisted_instance"] }
+        }
+      }
+    },
+    "allowlistEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": { "enum": ["comm", "cgroup", "pid"] },
+        "value": { "type": "string", "minLength": 1, "maxLength": 200 }
+      }
+    },
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cpuPercent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "ramPercent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "storagePercent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "powerWatts": { "type": "number", "minimum": 0 },
+        "fdCount": { "type": "integer", "minimum": 0 },
+        "inodePercent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "zombieCount": { "type": "integer", "minimum": 0 },
+        "forkRate": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "actions", "forbid"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "kind": { "$ref": "#/$defs/kind" },
+        "rationale": { "type": "string", "minLength": 1, "maxLength": 800 },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["do"],
+            "properties": {
+              "do": { "$ref": "#/$defs/actionDo" }
+            }
+          }
+        },
+        "forbid": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/forbidDo" }
+        },
+        "questions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 400 }
+        }
+      }
+    }
+  }
+}

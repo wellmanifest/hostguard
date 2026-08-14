@@ -1,0 +1,14 @@
+{
+  "schema": "wellmanifest.hostguard/interview/v1",
+  "subject_id": "linux.generic.host",
+  "purpose": "Policy must name the live host, not an editor buffer.",
+  "host_kind": "linux-generic",
+  "probe_interval_seconds": 30,
+  "signals": ["cpu", "ram"],
+  "probe_source": "injected-snapshot",
+  "allowlist_comms": ["systemd"],
+  "kill_granted": false,
+  "visible_kill_control": false,
+  "treat_top_as_threat": false,
+  "analyzer_or_top_noise": false
+}
