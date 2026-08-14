@@ -2,22 +2,34 @@
   "$schema": "https://wellmanifest.dev/schemas/hostguard/policy/v1",
   "schema": "wellmanifest.hostguard/policy/v1",
   "id": "linux.generic.host",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "purpose": "Protect a generic Linux host running a subactor instance from runaway processes.",
   "probe": {
     "intervalSeconds": 30,
     "source": "live-host",
-    "signals": ["cpu", "ram", "storage", "power", "fd", "inode", "zombie", "fork_bomb", "runaway"]
+    "signals": ["cpu", "ram", "storage", "power", "fd", "inode", "zombie", "fork_bomb", "runaway"],
+    "scopes": ["host"],
+    "dockerSock": "none"
   },
   "policy": {
     "unknownPolicy": "reject",
     "effectModel": "observe-default",
     "defaultAction": "observe",
-    "escalation": ["observe", "warn", "ticket", "escalate"],
+    "escalation": ["observe", "warn", "ticket", "notify_founder", "escalate"],
     "kill": {
       "capability": "capability://hostguard/kill/v1",
       "granted": false,
       "never": ["pid:1", "guardian_self", "allowlisted_instance"]
+    },
+    "block": {
+      "capability": "capability://hostguard/block/v1",
+      "granted": false,
+      "never": ["pid:1", "guardian_self", "allowlisted_instance", "in_use_tool"]
+    },
+    "notify": {
+      "audience": "founder",
+      "channels": ["browser-push", "desktop"],
+      "payloadSchema": "wellmanifest.hostguard/founder-notify/v1"
     },
     "forbid": [
       "kill_without_grant",
@@ -25,9 +37,17 @@
       "kill_guardian_self",
       "kill_allowlisted_instance",
       "treat_top_as_threat",
+      "treat_in_use_tool_as_threat",
       "treat_editor_as_host",
       "treat_visible_kill_as_grant",
-      "treat_probe_noise_as_debt"
+      "treat_probe_noise_as_debt",
+      "block_without_grant",
+      "block_pid_1",
+      "block_guardian_self",
+      "block_allowlisted_instance",
+      "block_in_use_tool",
+      "treat_visible_block_as_grant",
+      "mount_docker_sock_rw_by_default"
     ]
   },
   "allowlist": [
@@ -35,8 +55,16 @@
     {"kind": "comm", "value": "sshd"},
     {"kind": "comm", "value": "nginx"},
     {"kind": "cgroup", "value": "system.slice"},
-    {"kind": "comm", "value": "hostguard"}
+    {"kind": "tool", "value": "cursor"},
+    {"kind": "tool", "value": "bash"},
+    {"kind": "comm", "value": "hostguard"},
+    {"kind": "comm", "value": "guard-agent"}
   ],
+  "inUse": {
+    "comms": ["cursor", "bash", "zsh", "dockerd"],
+    "images": [],
+    "skipUntilInterview": true
+  },
   "thresholds": {
     "cpuPercent": 90,
     "ramPercent": 90,
@@ -51,9 +79,9 @@
     {
       "id": "inventory-vs-runtime",
       "kind": "inventory_vs_runtime",
-      "rationale": "A high CPU, RAM, or disk number in top is not a threat until the process is classified against the allowlist, cgroup, and instance services.",
-      "actions": [{"do": "classify_before_threat"}, {"do": "observe"}],
-      "forbid": ["treat_top_as_threat"]
+      "rationale": "A high CPU, RAM, or disk number in top is not a threat until the process is classified against the allowlist, cgroup, in-use tools, and instance services.",
+      "actions": [{"do": "classify_before_threat"}, {"do": "observe"}, {"do": "skip_in_use_tool"}],
+      "forbid": ["treat_top_as_threat", "treat_in_use_tool_as_threat"]
     },
     {
       "id": "served-artifact",
@@ -65,12 +93,14 @@
     {
       "id": "capability-surface",
       "kind": "capability_surface",
-      "rationale": "A visible Kill button is not a wellmanifest.poa grant. unknownPolicy=reject; observe+warn+ticket is the default effect.",
-      "actions": [{"do": "require_kill_grant"}, {"do": "refuse_kill"}],
-      "forbid": ["treat_visible_kill_as_grant", "kill_without_grant"]
+      "rationale": "A visible Kill or Block button is not a wellmanifest.poa grant. unknownPolicy=reject; observe+warn+ticket+notify_founder is the default effect.",
+      "actions": [{"do": "require_kill_grant"}, {"do": "require_block_grant"}, {"do": "refuse_kill"}, {"do": "refuse_block"}],
+      "forbid": ["treat_visible_kill_as_grant", "treat_visible_block_as_grant", "kill_without_grant", "block_without_grant"]
     }
   ],
   "questions": [
-    "A visible Kill control is not a POA grant. Is capability://hostguard/kill/v1 explicitly granted, or is observe+warn+ticket the only effect?"
+    "A visible Kill control is not a POA grant. Is capability://hostguard/kill/v1 explicitly granted, or is observe+warn+ticket the only effect?",
+    "A visible Block control is not a POA grant. Is capability://hostguard/block/v1 explicitly granted, or is observe+ticket+notify the only effect?",
+    "Founder notify uses browser-push and desktop. Without VAPID keys the product must stub the channel (receipt + local poll event) and must not invent secrets. Who is the audience? (founder only)"
   ]
 }

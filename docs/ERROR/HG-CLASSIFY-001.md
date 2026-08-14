@@ -3,7 +3,7 @@
 ## Meaning
 
 The policy is missing `inventory_vs_runtime`, `classify_before_threat`, or
-the `treat_top_as_threat` forbid.
+the `treat_top_as_threat` forbid. In-use tools use `HG-INUSE-001`.
 
 ## Cause
 

@@ -4,8 +4,11 @@ Warstwa do opisu zagrożeń procesami na hoście: najpierw klasyfikacja, potem
 dokument polityki. To **wzorzec**, nie agent.
 
 A generic host-threat policy pack. It interviews, classifies, and emits a
-propose-only DSL document. It does not probe `/proc`, start a daemon, or kill
-a process. The implementing product is [`subactor/hostguard`](https://github.com/subactor/hostguard).
+propose-only DSL document. It does not probe `/proc`, start a daemon, kill,
+or block. Implementing products:
+
+- [`subactor/hostguard`](https://github.com/subactor/hostguard) — CPU/RAM/storage/power probe
+- [`subactor/guard-agent`](https://github.com/subactor/guard-agent) — security holes, founder notify, granted block
 
 This repository is a **domain pack** on [`wellmanifest/dsl`](https://github.com/wellmanifest/dsl).
 Canonical documents are JSON AST (`wellmanifest.hostguard/policy/v1`).
@@ -14,17 +17,22 @@ Canonical documents are JSON AST (`wellmanifest.hostguard/policy/v1`).
 ## Why this exists
 
 `top` showing high CPU is not “this process threatens the instance.” Dual
-truths (inventory vs the live host), chrome vs grant, and analyzer noise must
-be classified before warn, ticket, or kill. Kill is a separate
-`capability://hostguard/kill/v1` with `unknownPolicy=reject`.
+truths (inventory vs the live host), chrome vs grant, in-use tools vs
+unknown binaries, and analyzer noise must be classified before warn, ticket,
+notify, or block. Kill is `capability://hostguard/kill/v1`. Block is
+`capability://hostguard/block/v1`. Both use `unknownPolicy=reject`.
 
 Lessons encoded here (method, not product code):
 
 1. `inventory_vs_runtime` — a high number in `top` is not a threat until
-   classified (allowlist, cgroup, our service).
+   classified (allowlist, cgroup, our service, **tools in use**).
 2. `served_artifact` — the product must probe the live host, not the editor.
-3. `capability_surface` — a visible Kill button is not a POA grant.
+3. `capability_surface` — a visible Kill/Block button is not a POA grant.
 4. Do not treat analyzer or `top` noise as debt.
+5. Founder notify (`browser-push`, `desktop`) is the default next step after
+   observe+ticket. Block is granted, never default.
+6. Docker holes (`docker.sock`, privileged, host PID) are in-scope on a
+   **developer** host. Default `dockerSock` is `none`, never RW.
 
 ## Interview → DSL
 
@@ -42,7 +50,8 @@ questions/interview.json
 ```
 
 Effect model in the document: **observe-default**. Escalation is
-observe → warn → ticket → escalate. Kill is declared, not executed here.
+observe → warn → ticket → notify_founder → escalate. Kill and block are
+declared, not executed here.
 
 ## CLI (documents only)
 
@@ -50,32 +59,45 @@ observe → warn → ticket → escalate. Kill is declared, not executed here.
 PYTHONPATH=src python3 -m hostguard questions
 PYTHONPATH=src python3 -m hostguard classify examples/linux-host.interview.json
 PYTHONPATH=src python3 -m hostguard suggest examples/linux-host.hostguard.json
-PYTHONPATH=src python3 -m hostguard validate examples/linux-host.hostguard.json
+PYTHONPATH=src python3 -m hostguard validate examples/linux-dev-docker.hostguard.json
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-There is no `probe`, `watch`, or `kill` command in this pack.
+There is no `probe`, `watch`, `kill`, or `block` command in this pack.
 
 ## Kinds
 
 | Kind | Meaning | Default next action |
 | --- | --- | --- |
-| `inventory_vs_runtime` | `top` ≠ threat | Classify before warn |
+| `inventory_vs_runtime` | `top` ≠ threat; in-use tools ≠ threat | Classify before warn |
 | `served_artifact` | Editor ≠ host | Product probes live host |
-| `capability_surface` | Chrome ≠ grant | Require kill grant |
-| `allowlisted_instance` | Our service | Never kill |
-| `guardian_self` | The product itself | Never kill |
-| `init_pid` | PID 1 | Never kill |
-| `runaway_process` | Classified foreign threat | Ticket; propose kill only if granted |
+| `capability_surface` | Chrome ≠ grant | Require kill/block grant |
+| `allowlisted_instance` | Our service | Never kill/block |
+| `guardian_self` | The product itself | Never kill/block |
+| `init_pid` | PID 1 | Never kill/block |
+| `runaway_process` | Classified foreign resource threat | Ticket; propose kill only if granted |
 | `resource_pressure` | Host-level cpu/ram/disk/power | Ticket |
 | `fork_bomb` / `zombie_storm` | Process table threat | Ticket |
 | `probe_noise` | Analyzer/`top` noise | Ask; not debt |
 | `unknown_process` | Unclassified | reject |
+| `suspicious_process` | Foreign process after in-use skip | Notify founder; ticket |
+| `unexpected_listener` | Unexpected bind | Notify founder; ticket |
+| `docker_socket_exposure` | docker.sock visible | Notify; never default RW mount |
+| `docker_privileged` | Privileged container | Notify; prefer container stop if granted |
+| `capability_escalation` | Host PID / extra caps | Notify |
+| `unknown_binary` | Unknown exe in a container | Fail closed unless in-use |
+| `crypto_miner_pattern` | Miner comm/cmdline | Notify; skip in-use tools |
 
 ## Signals
 
-`cpu`, `ram`, `storage`, `power`, `fd`, `inode`, `zombie`, `fork_bomb`, `runaway`.
+Resource: `cpu`, `ram`, `storage`, `power`, `fd`, `inode`, `zombie`,
+`fork_bomb`, `runaway`.
+
+Security: `listener`, `docker_sock`, `docker_privileged`, `cap_escalation`,
+`unknown_binary`, `crypto_miner`.
+
 Interval lives in the document (`probe.intervalSeconds`), not in pack code.
+Scope is `host` | `container` | `docker-engine`.
 
 ## Related
 
@@ -83,4 +105,5 @@ Interval lives in the document (`probe.intervalSeconds`), not in pack code.
 - [`wellmanifest/logs`](https://github.com/wellmanifest/logs) — event/receipt shape the product emits
 - [`wellmanifest/poa`](https://github.com/wellmanifest/poa) — grant / `unknownPolicy=reject`
 - [`wellmanifest/new-project`](https://github.com/wellmanifest/new-project) — optional later governance
-- [`subactor/hostguard`](https://github.com/subactor/hostguard) — cyclic probe, tickets, granted kill
+- [`subactor/hostguard`](https://github.com/subactor/hostguard) — cyclic resource probe
+- [`subactor/guard-agent`](https://github.com/subactor/guard-agent) — holes, notify, granted block

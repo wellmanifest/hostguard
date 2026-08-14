@@ -1,8 +1,8 @@
 {
   "schema": "wellmanifest.hostguard/interview/v1",
   "id": "wellmanifest.hostguard.interview",
-  "version": "0.1.0",
-  "purpose": "Classify host process resource signals before warn, ticket, or a granted kill.",
+  "version": "0.2.0",
+  "purpose": "Classify host process resource and security signals before warn, ticket, founder notify, or a granted kill/block.",
   "questions": [
     {
       "id": "subject_id",
@@ -32,10 +32,24 @@
     },
     {
       "id": "signals",
-      "prompt": "Which signals should the probe inspect? (comma-separated: cpu, ram, storage, power, fd, inode, zombie, fork_bomb, runaway)",
+      "prompt": "Which signals should the probe inspect? (comma-separated: cpu, ram, storage, power, fd, inode, zombie, fork_bomb, runaway, listener, docker_sock, docker_privileged, cap_escalation, unknown_binary, crypto_miner)",
       "type": "enum-list",
-      "choices": ["cpu", "ram", "storage", "power", "fd", "inode", "zombie", "fork_bomb", "runaway"],
+      "choices": ["cpu", "ram", "storage", "power", "fd", "inode", "zombie", "fork_bomb", "runaway", "listener", "docker_sock", "docker_privileged", "cap_escalation", "unknown_binary", "crypto_miner"],
       "required": true
+    },
+    {
+      "id": "scopes",
+      "prompt": "Which scopes apply? (comma-separated: host, container, docker-engine). docker-engine findings are in-scope on a developer host.",
+      "type": "enum-list",
+      "choices": ["host", "container", "docker-engine"],
+      "required": false
+    },
+    {
+      "id": "docker_sock_policy",
+      "prompt": "How may docker.sock be used? (none or read-only — RW is rejected)",
+      "type": "enum",
+      "choices": ["none", "read-only"],
+      "required": false
     },
     {
       "id": "probe_source",
@@ -57,6 +71,24 @@
       "required": false
     },
     {
+      "id": "allowlist_images",
+      "prompt": "Container images that belong to the instance (comma-separated).",
+      "type": "string-list",
+      "required": false
+    },
+    {
+      "id": "in_use_tools",
+      "prompt": "Process comm names currently in use that must not be treated as threats (comma-separated, e.g. cursor, bash, dockerd).",
+      "type": "string-list",
+      "required": false
+    },
+    {
+      "id": "treat_in_use_as_threat",
+      "prompt": "Should tools currently in use be treated as threats before classification? Default must be no.",
+      "type": "bool",
+      "required": false
+    },
+    {
       "id": "kill_granted",
       "prompt": "Is capability://hostguard/kill/v1 explicitly granted? Default must be no.",
       "type": "bool",
@@ -67,6 +99,38 @@
       "prompt": "Is there a visible Kill button that an operator might mistake for a grant?",
       "type": "bool",
       "required": true
+    },
+    {
+      "id": "block_granted",
+      "prompt": "Is capability://hostguard/block/v1 explicitly granted? Default must be no. Observe+ticket+notify is the default effect.",
+      "type": "bool",
+      "required": false
+    },
+    {
+      "id": "visible_block_control",
+      "prompt": "Is there a visible Block button that an operator might mistake for a grant?",
+      "type": "bool",
+      "required": false
+    },
+    {
+      "id": "notify_founder",
+      "prompt": "Should findings notify the founder (browser-push and desktop)? Default yes. Audience is founder, not every operator.",
+      "type": "bool",
+      "required": false
+    },
+    {
+      "id": "notify_channels",
+      "prompt": "Notify channels (comma-separated: browser-push, desktop).",
+      "type": "enum-list",
+      "choices": ["browser-push", "desktop"],
+      "required": false
+    },
+    {
+      "id": "audience",
+      "prompt": "Who receives notify? (founder only)",
+      "type": "enum",
+      "choices": ["founder"],
+      "required": false
     },
     {
       "id": "treat_top_as_threat",

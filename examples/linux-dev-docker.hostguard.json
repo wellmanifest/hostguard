@@ -1,0 +1,153 @@
+{
+  "$schema": "https://wellmanifest.dev/schemas/hostguard/policy/v1",
+  "schema": "wellmanifest.hostguard/policy/v1",
+  "id": "linux.dev.docker",
+  "version": "0.2.0",
+  "purpose": "Classify security holes and suspicious processes on a developer host and in Docker, then notify the founder. Block stays ungranted.",
+  "probe": {
+    "intervalSeconds": 30,
+    "source": "injected-snapshot",
+    "signals": ["cpu", "ram", "listener", "docker_sock", "docker_privileged", "cap_escalation", "unknown_binary", "crypto_miner"],
+    "scopes": ["host", "container", "docker-engine"],
+    "dockerSock": "none"
+  },
+  "policy": {
+    "unknownPolicy": "reject",
+    "effectModel": "observe-default",
+    "defaultAction": "observe",
+    "escalation": ["observe", "warn", "ticket", "notify_founder", "escalate"],
+    "kill": {
+      "capability": "capability://hostguard/kill/v1",
+      "granted": false,
+      "never": ["pid:1", "guardian_self", "allowlisted_instance"]
+    },
+    "block": {
+      "capability": "capability://hostguard/block/v1",
+      "granted": false,
+      "never": ["pid:1", "guardian_self", "allowlisted_instance", "in_use_tool"]
+    },
+    "notify": {
+      "audience": "founder",
+      "channels": ["browser-push", "desktop"],
+      "payloadSchema": "wellmanifest.hostguard/founder-notify/v1"
+    },
+    "forbid": [
+      "kill_without_grant",
+      "kill_pid_1",
+      "kill_guardian_self",
+      "kill_allowlisted_instance",
+      "treat_top_as_threat",
+      "treat_in_use_tool_as_threat",
+      "treat_editor_as_host",
+      "treat_visible_kill_as_grant",
+      "treat_probe_noise_as_debt",
+      "block_without_grant",
+      "block_pid_1",
+      "block_guardian_self",
+      "block_allowlisted_instance",
+      "block_in_use_tool",
+      "treat_visible_block_as_grant",
+      "mount_docker_sock_rw_by_default"
+    ]
+  },
+  "allowlist": [
+    {"kind": "comm", "value": "systemd"},
+    {"kind": "comm", "value": "sshd"},
+    {"kind": "image", "value": "nginx:alpine"},
+    {"kind": "tool", "value": "cursor"},
+    {"kind": "tool", "value": "dockerd"},
+    {"kind": "comm", "value": "hostguard"},
+    {"kind": "comm", "value": "guard-agent"}
+  ],
+  "inUse": {
+    "comms": ["cursor", "bash", "zsh", "dockerd", "containerd"],
+    "images": ["nginx:alpine"],
+    "skipUntilInterview": true
+  },
+  "thresholds": {
+    "cpuPercent": 90,
+    "ramPercent": 90
+  },
+  "classifications": [
+    {
+      "id": "inventory-vs-runtime",
+      "kind": "inventory_vs_runtime",
+      "rationale": "In-use developer tools and allowlisted images are inventory, not threats.",
+      "actions": [{"do": "classify_before_threat"}, {"do": "observe"}, {"do": "skip_in_use_tool"}],
+      "forbid": ["treat_top_as_threat", "treat_in_use_tool_as_threat"]
+    },
+    {
+      "id": "served-artifact",
+      "kind": "served_artifact",
+      "rationale": "The product probes the live host or an injected snapshot of that host.",
+      "actions": [{"do": "probe_live_host"}],
+      "forbid": ["treat_editor_as_host"]
+    },
+    {
+      "id": "capability-surface",
+      "kind": "capability_surface",
+      "rationale": "Block and kill are grants, not chrome.",
+      "actions": [{"do": "require_kill_grant"}, {"do": "require_block_grant"}, {"do": "refuse_kill"}, {"do": "refuse_block"}],
+      "forbid": ["treat_visible_kill_as_grant", "treat_visible_block_as_grant", "kill_without_grant", "block_without_grant"]
+    },
+    {
+      "id": "suspicious-process",
+      "kind": "suspicious_process",
+      "scope": "host",
+      "rationale": "A process is suspicious only after allowlist and in-use tools are skipped.",
+      "actions": [{"do": "classify_before_threat"}, {"do": "observe"}, {"do": "notify_founder"}, {"do": "write_ticket"}],
+      "forbid": ["treat_in_use_tool_as_threat", "block_without_grant"]
+    },
+    {
+      "id": "unexpected-listener",
+      "kind": "unexpected_listener",
+      "scope": "host",
+      "rationale": "An unexpected listener is a finding after in-use tools are skipped.",
+      "actions": [{"do": "observe"}, {"do": "notify_founder"}, {"do": "write_ticket"}, {"do": "refuse_block"}],
+      "forbid": ["treat_in_use_tool_as_threat", "block_without_grant"]
+    },
+    {
+      "id": "docker-socket-exposure",
+      "kind": "docker_socket_exposure",
+      "scope": "docker-engine",
+      "rationale": "docker.sock exposure on a developer host is in-scope. Default is no RW mount.",
+      "actions": [{"do": "observe"}, {"do": "notify_founder"}, {"do": "write_ticket"}, {"do": "refuse_block"}],
+      "forbid": ["treat_in_use_tool_as_threat", "block_without_grant", "mount_docker_sock_rw_by_default"]
+    },
+    {
+      "id": "docker-privileged",
+      "kind": "docker_privileged",
+      "scope": "container",
+      "rationale": "A privileged container is a capability hole.",
+      "actions": [{"do": "observe"}, {"do": "notify_founder"}, {"do": "write_ticket"}, {"do": "refuse_block"}],
+      "forbid": ["treat_in_use_tool_as_threat", "block_without_grant"]
+    },
+    {
+      "id": "capability-escalation",
+      "kind": "capability_escalation",
+      "scope": "container",
+      "rationale": "Host PID namespace or extra capabilities are in-scope for a developer host.",
+      "actions": [{"do": "observe"}, {"do": "notify_founder"}, {"do": "write_ticket"}, {"do": "refuse_block"}],
+      "forbid": ["treat_in_use_tool_as_threat", "block_without_grant"]
+    },
+    {
+      "id": "unknown-binary",
+      "kind": "unknown_binary",
+      "scope": "container",
+      "rationale": "Unknown binaries in containers fail closed unless allowlisted or currently in use.",
+      "actions": [{"do": "observe"}, {"do": "notify_founder"}, {"do": "write_ticket"}, {"do": "refuse_block"}],
+      "forbid": ["treat_in_use_tool_as_threat", "block_without_grant"]
+    },
+    {
+      "id": "crypto-miner-pattern",
+      "kind": "crypto_miner_pattern",
+      "scope": "host",
+      "rationale": "Crypto-miner patterns are suspicious only after skipping in-use developer tools.",
+      "actions": [{"do": "observe"}, {"do": "notify_founder"}, {"do": "write_ticket"}, {"do": "refuse_block"}],
+      "forbid": ["treat_in_use_tool_as_threat", "block_without_grant"]
+    }
+  ],
+  "questions": [
+    "A visible Block control is not a POA grant. Is capability://hostguard/block/v1 explicitly granted, or is observe+ticket+notify the only effect?"
+  ]
+}

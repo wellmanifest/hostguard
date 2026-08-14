@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wellmanifest.dev/schemas/hostguard/founder-notify/v1",
+  "title": "Founder notification payload for hostguard / guard-agent",
+  "description": "Shape of a founder-facing notify. The pack does not send notifications. Receipts belong to wellmanifest.logs / poa.receipt/v1 in the product. Do not put VAPID private keys or subscription secrets in this document.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "channel",
+    "audience",
+    "policyId",
+    "occurredAt",
+    "scope",
+    "kind",
+    "action",
+    "blocked",
+    "title",
+    "body"
+  ],
+  "properties": {
+    "schema": { "const": "wellmanifest.hostguard/founder-notify/v1" },
+    "channel": { "enum": ["browser-push", "desktop"] },
+    "audience": { "const": "founder" },
+    "policyId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "occurredAt": { "type": "string", "minLength": 10, "maxLength": 40 },
+    "scope": { "enum": ["host", "container", "docker-engine"] },
+    "kind": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "action": { "enum": ["observe", "warn", "ticket", "notify_founder", "block"] },
+    "blocked": { "type": "boolean" },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pid": { "type": "integer" },
+        "comm": { "type": "string" },
+        "containerId": { "type": ["string", "null"] },
+        "image": { "type": ["string", "null"] },
+        "listen": { "type": ["string", "null"] }
+      }
+    },
+    "skippedInUse": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 80 }
+    },
+    "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "body": { "type": "string", "minLength": 1, "maxLength": 800 }
+  }
+}

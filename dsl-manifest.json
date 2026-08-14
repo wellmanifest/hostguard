@@ -3,9 +3,9 @@
   "schema": "wellmanifest.dsl/manifest/v1",
   "id": "wellmanifest.hostguard",
   "name": "Wellmanifest hostguard policy DSL",
-  "version": "0.1.0-dev",
+  "version": "0.2.0-dev",
   "status": "experimental",
-  "purpose": "Interview-driven classification of host process threats into propose-only observe/warn/ticket/kill-grant policies",
+  "purpose": "Interview-driven classification of host process and Docker security threats into propose-only observe/warn/ticket/notify/block-grant policies",
   "domain": "host-process-threat",
   "owners": [
     {
@@ -34,37 +34,42 @@
     {
       "path": "schemas/hostguard-policy.schema.json",
       "role": "normative-source",
-      "digest": "sha256:bb0e8764d60b5ea3395dfe9a4a9e87e3fd5fc743cdb1739081a801d20fad01af"
+      "digest": "sha256:f34d5124ce9c7412eeb61f3a47df90a729c2c188ae2947c0b872650085d608fd"
     },
     {
       "path": "schemas/hostguard-interview.schema.json",
       "role": "schema",
-      "digest": "sha256:29f12fc3704206bc3890b20f3054601db9cfb3830dfd273c304b9e8d4ffa6e64"
+      "digest": "sha256:ac1d99cb83af506afb67cd81d495751348ef0c80846acfd3b3383b48666c0168"
+    },
+    {
+      "path": "schemas/hostguard-founder-notify.schema.json",
+      "role": "schema",
+      "digest": "sha256:f7f89be47970371ec4f022ff49b1da404d7b51bbed2d05c51961945bbbc08d07"
     },
     {
       "path": "questions/interview.json",
       "role": "profile",
-      "digest": "sha256:ee9baac2a5783cf32f53698de9c7a7068a195057682a5dd57b039c8634460488"
+      "digest": "sha256:9748c4eac735c247e3a1c3e6ee88f0e10b7903f52830d3dde189f16ead8e7abb"
     },
     {
       "path": "src/hostguard.py",
       "role": "parser-contract",
-      "digest": "sha256:ba437993386325c1fabfd86bfd21bd06126d38d27671cce531baf1e33a65d776"
+      "digest": "sha256:dcddbe6db68fc86d31d4b8359f5a90558ecc3bff90298aa6ad57dfaf2fb397aa"
     },
     {
       "path": "docs/HOSTGUARD.md",
       "role": "documentation",
-      "digest": "sha256:b4c70649f957d3efed0725760c7d67ed23e434e7c9b522a0c8ded0ae3a3b1f6b"
+      "digest": "sha256:d3f8982212781aa08398db48820795f94d3fcd2fddbe9ea5849b19787ae4715c"
     },
     {
       "path": "docs/INTERVIEW.md",
       "role": "documentation",
-      "digest": "sha256:0c292c3c442485ffdda64450d3527c5b4335d7ac7d0f817183c41b17a50aa20d"
+      "digest": "sha256:514b99a507c368df563bbabfa916d756219ff782fc7514e66b8c368fd2e06e6c"
     },
     {
       "path": "docs/CLASSIFY.md",
       "role": "documentation",
-      "digest": "sha256:c0fd74715387a1de51e20dcd3581949805c23e85e80713a20ea52b1110a03084"
+      "digest": "sha256:7f3597e30fb1a82b3569846c7b5f87af8d00fb85e67a9f9c27686e30d27e9d6b"
     },
     {
       "path": "docs/SUGGEST.md",
@@ -74,12 +79,22 @@
     {
       "path": "docs/VALIDATE.md",
       "role": "documentation",
-      "digest": "sha256:67a9ba92846d9f43419580a99c55b50b5bc1e4fde058d3fb56b5d9577a1537ea"
+      "digest": "sha256:1d335524bd01bb37612d3502e8a138bacabef115119b57c974c265e03f94e531"
     },
     {
       "path": "docs/MAPPING.md",
       "role": "documentation",
-      "digest": "sha256:e42d49e64d65ebc27ad0777df38b94d3fde4a318549fb50e6f0cead7afdd54f8"
+      "digest": "sha256:18e003bf0100838d62113cea77ba9dd31b1cbec3ff94ded7127a35e9ed3028b0"
+    },
+    {
+      "path": "docs/NOTIFY.md",
+      "role": "documentation",
+      "digest": "sha256:c631afe61c3a5ffd1c24f0104a7db8768212c784fb1d4301d8ee9612e786bd69"
+    },
+    {
+      "path": "docs/DOCKER.md",
+      "role": "documentation",
+      "digest": "sha256:691fa1cde688b3cf76fd8c59b5ac26016bf6c29aca2440a910cacf39051cfe73"
     },
     {
       "path": "docs/ERROR/HG-KIND-001.md",
@@ -104,12 +119,12 @@
     {
       "path": "docs/ERROR/HG-CLASSIFY-001.md",
       "role": "documentation",
-      "digest": "sha256:0d333ccf967c01f15d4dc64d6e730878eb69d2b4fccd576f257d05766de10b7c"
+      "digest": "sha256:bccbed3e98de5b39dcaeff0e55ac17a4cc07a09490fec127b02ee566a3ebc586"
     },
     {
       "path": "docs/ERROR/HG-POA-001.md",
       "role": "documentation",
-      "digest": "sha256:2aed36e63c33c8c0518f6b0c59b773d98b1ae4a11c3acc6c02264ffa921d7595"
+      "digest": "sha256:a8772480215473056dbe268975b9b4d30c2861ff0d8fb1980b59c4ea39df832a"
     },
     {
       "path": "docs/ERROR/HG-SERVE-001.md",
@@ -127,19 +142,59 @@
       "digest": "sha256:b18178c67e7e5f133f584076dea8b954f7dd9420046f0c6a1df23d6353606a5d"
     },
     {
+      "path": "docs/ERROR/HG-BLOCK-001.md",
+      "role": "documentation",
+      "digest": "sha256:4c7b6ff8c8a1c3f0d1884cc13ba1343ac118a4ce59c2c412b45171f3620b4c8f"
+    },
+    {
+      "path": "docs/ERROR/HG-NOTIFY-001.md",
+      "role": "documentation",
+      "digest": "sha256:257989133e00402ad5c4186e1d0f9fce81ec7de175870be0a5ed3719fde2aff5"
+    },
+    {
+      "path": "docs/ERROR/HG-SCOPE-001.md",
+      "role": "documentation",
+      "digest": "sha256:3c61135bc438092ef35c9bf98319b39107ba52f940dbd4e531cb3e32183fe457"
+    },
+    {
+      "path": "docs/ERROR/HG-INUSE-001.md",
+      "role": "documentation",
+      "digest": "sha256:8e1be3af03b12b6da0679cc5e59b2feecd4d5d5d95956fd372d1369b61e7dc9a"
+    },
+    {
+      "path": "docs/ERROR/HG-DOCKER-001.md",
+      "role": "documentation",
+      "digest": "sha256:3b24cfc9da60555b97ab43a215b82b46e8c41b6cd3ec0771fe4c34fbf0fba37a"
+    },
+    {
       "path": "docs/CRITICAL/HG-KILL-001.md",
       "role": "documentation",
-      "digest": "sha256:ae5a9028c9771f279bf53f6b329367795f30b12047dbcf8ae49cfc0cf2311853"
+      "digest": "sha256:c1b59e046663d8edd849829026137f62a18812654f79ca13441ed9bb318365ce"
+    },
+    {
+      "path": "docs/CRITICAL/HG-BLOCK-001.md",
+      "role": "documentation",
+      "digest": "sha256:e3c7ea9ba701baa8d70269e736eb2ed784f9e53e37b093ac59865351d5c77f91"
     },
     {
       "path": "examples/linux-host.hostguard.json",
       "role": "example",
-      "digest": "sha256:aeb1feee8428ed58673f928a9d71ba1d2f149e4fbe6dcee5e3a045295771e4fa"
+      "digest": "sha256:a66a78b1852ff7c09663c69f7a9f2fd94d15635907375217147d17fd492d6dd9"
     },
     {
       "path": "examples/linux-host.hostguard.dsl",
       "role": "example",
-      "digest": "sha256:e0ec100a4888433f6fe9c1cb094e9f9623bced030882b9b67f91b4f514920093"
+      "digest": "sha256:3352942486eee8423002103e87cb653d85d94c81ccbee8b657e1b080efdbda2b"
+    },
+    {
+      "path": "examples/linux-dev-docker.hostguard.json",
+      "role": "example",
+      "digest": "sha256:0213bf514d70bae66bccc20986e4b9c0ce04bb7d82a056afd531527324927abb"
+    },
+    {
+      "path": "examples/linux-dev-docker.hostguard.dsl",
+      "role": "example",
+      "digest": "sha256:aaedc6e97a113a796831df131a8b2ec07065b7bef4c8edd223c4814f678f7172"
     }
   ],
   "namespaces": [
@@ -180,7 +235,7 @@
     "commandRoot": "docs",
     "errorRoot": "docs/ERROR",
     "criticalRoot": "docs/CRITICAL",
-    "commands": ["HOSTGUARD", "INTERVIEW", "CLASSIFY", "SUGGEST", "VALIDATE"],
+    "commands": ["HOSTGUARD", "INTERVIEW", "CLASSIFY", "SUGGEST", "VALIDATE", "NOTIFY", "DOCKER"],
     "errorCodes": [
       "HG-KIND-001",
       "HG-GRANT-001",
@@ -190,9 +245,14 @@
       "HG-POA-001",
       "HG-SERVE-001",
       "HG-NOISE-001",
-      "HG-UNKNOWN-001"
+      "HG-UNKNOWN-001",
+      "HG-BLOCK-001",
+      "HG-NOTIFY-001",
+      "HG-SCOPE-001",
+      "HG-INUSE-001",
+      "HG-DOCKER-001"
     ],
-    "criticalCodes": ["HG-KILL-001"]
+    "criticalCodes": ["HG-KILL-001", "HG-BLOCK-001"]
   },
   "findingPolicy": {
     "schema": "wellmanifest.dsl/findings/v1",
@@ -215,8 +275,14 @@
       "PYTHONPATH=src python3 -m hostguard validate examples/linux-host.hostguard.json",
       "PYTHONPATH=src python3 -m unittest discover -s tests"
     ],
-    "validExamples": ["examples/linux-host.hostguard.json"],
-    "invalidExamples": ["examples/invalid/missing-interval.hostguard.json"]
+    "validExamples": [
+      "examples/linux-host.hostguard.json",
+      "examples/linux-dev-docker.hostguard.json"
+    ],
+    "invalidExamples": [
+      "examples/invalid/missing-interval.hostguard.json",
+      "examples/invalid/block-without-grant.hostguard.json"
+    ]
   },
   "mappings": [
     {

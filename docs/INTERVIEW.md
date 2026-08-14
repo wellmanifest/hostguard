@@ -2,8 +2,8 @@
 
 ## Purpose
 
-Ask the questions that classify host signals before any warn, ticket, or kill
-policy is written.
+Ask the questions that classify host signals before any warn, ticket, founder
+notify, kill, or block policy is written.
 
 ## Syntax
 
@@ -25,8 +25,9 @@ its text projection (`--format dsl`).
 
 ## Errors
 
-Invalid answers fail with `HG-KIND-001`, `HG-INTERVAL-001`, or `HG-SERVE-001`.
-`probe_source=editor-view` is rejected.
+Invalid answers fail with `HG-KIND-001`, `HG-INTERVAL-001`, `HG-SERVE-001`,
+`HG-SCOPE-001`, `HG-NOTIFY-001`, or `HG-DOCKER-001`.
+`probe_source=editor-view` is rejected. `docker_sock_policy` may not be RW.
 
 ## Examples
 
@@ -35,3 +36,5 @@ PYTHONPATH=src python3 -m hostguard interview --answers examples/probe-noise.int
 ```
 
 That interview must emit `KIND probe_noise` and a clarifying `QUESTION`.
+`examples/linux-dev-docker.interview.json` must emit Docker and security kinds
+with `notify.audience=founder` and `block.granted=false`.

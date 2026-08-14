@@ -22,13 +22,15 @@ One policy document. Required kinds:
 
 | Condition | Kind | Default actions |
 | --- | --- | --- |
-| Always | `inventory_vs_runtime` | classify before threat; forbid treating top as threat |
+| Always | `inventory_vs_runtime` | classify before threat; forbid treating top **or in-use tools** as threat |
 | Always | `served_artifact` | product probes live host; forbid editor-as-host |
-| Always | `capability_surface` | require kill grant; forbid chrome-as-grant |
+| Always | `capability_surface` | require kill grant (and block grant when `policy.block` is present); forbid chrome-as-grant |
 | Analyzer/`top` noise | `probe_noise` | ask; not debt |
+| Docker/security signals or scopes | `suspicious_process`, `unexpected_listener`, `docker_socket_exposure`, `docker_privileged`, `capability_escalation`, `unknown_binary`, `crypto_miner_pattern` | observe + notify_founder + ticket; refuse_block unless granted |
 
 `unknownPolicy=reject` and `defaultAction=observe` are always emitted.
-`kill.granted` is false unless the interview says otherwise.
+`kill.granted` and `block.granted` are false unless the interview says otherwise.
+Notify audience is `founder`. Channels default to `browser-push` and `desktop`.
 
 ## Errors
 

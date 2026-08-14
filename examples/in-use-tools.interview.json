@@ -1,0 +1,15 @@
+{
+  "schema": "wellmanifest.hostguard/interview/v1",
+  "subject_id": "linux.generic.host",
+  "purpose": "In-use tools must not be threats until classified.",
+  "host_kind": "linux-generic",
+  "probe_interval_seconds": 30,
+  "signals": ["cpu"],
+  "probe_source": "live-host",
+  "in_use_tools": ["cursor", "bash"],
+  "treat_in_use_as_threat": true,
+  "kill_granted": false,
+  "visible_kill_control": false,
+  "treat_top_as_threat": false,
+  "analyzer_or_top_noise": false
+}

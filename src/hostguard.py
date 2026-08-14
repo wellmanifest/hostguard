@@ -2,8 +2,8 @@
 """Hostguard domain pack: propose-only policy documents.
 
 This repository is a wellmanifest/dsl pack. It classifies host-threat
-*documents*. It does not probe a machine, start a daemon, or kill a process.
-The product that implements this contract lives in subactor/hostguard.
+*documents*. It does not probe a machine, start a daemon, kill, or block.
+Products: subactor/hostguard (resources) and subactor/guard-agent (holes).
 """
 
 from __future__ import annotations
@@ -25,6 +25,8 @@ SEMVER = re.compile(
 )
 CAPABILITY = re.compile(r"^capability://[a-z0-9.-]+/[a-z][a-z0-9._:/-]*/v[1-9][0-9]*$")
 KILL_CAPABILITY = "capability://hostguard/kill/v1"
+BLOCK_CAPABILITY = "capability://hostguard/block/v1"
+NOTIFY_PAYLOAD = "wellmanifest.hostguard/founder-notify/v1"
 
 SIGNALS = {
     "cpu",
@@ -36,6 +38,12 @@ SIGNALS = {
     "zombie",
     "fork_bomb",
     "runaway",
+    "listener",
+    "docker_sock",
+    "docker_privileged",
+    "cap_escalation",
+    "unknown_binary",
+    "crypto_miner",
 }
 KINDS = {
     "inventory_vs_runtime",
@@ -50,18 +58,32 @@ KINDS = {
     "zombie_storm",
     "probe_noise",
     "unknown_process",
+    "suspicious_process",
+    "unexpected_listener",
+    "docker_socket_exposure",
+    "docker_privileged",
+    "capability_escalation",
+    "unknown_binary",
+    "crypto_miner_pattern",
 }
 ACTIONS = {
     "observe",
     "warn",
     "write_ticket",
+    "ticket",
     "escalate",
+    "notify_founder",
     "propose_kill",
     "refuse_kill",
+    "propose_block",
+    "refuse_block",
+    "block",
     "ask_clarifying_questions",
     "classify_before_threat",
     "probe_live_host",
     "require_kill_grant",
+    "require_block_grant",
+    "skip_in_use_tool",
     "ignore_probe_noise",
 }
 FORBIDS = {
@@ -69,24 +91,47 @@ FORBIDS = {
     "kill_pid_1",
     "kill_guardian_self",
     "kill_allowlisted_instance",
+    "block_without_grant",
+    "block_pid_1",
+    "block_guardian_self",
+    "block_allowlisted_instance",
+    "block_in_use_tool",
     "treat_top_as_threat",
+    "treat_in_use_tool_as_threat",
     "treat_editor_as_host",
     "treat_visible_kill_as_grant",
+    "treat_visible_block_as_grant",
     "treat_probe_noise_as_debt",
+    "mount_docker_sock_rw_by_default",
 }
 SOURCES = {"live-host", "injected-snapshot"}
 HOST_KINDS = {"linux-generic", "container", "vm"}
+SCOPES = {"host", "container", "docker-engine"}
+CHANNELS = {"browser-push", "desktop"}
+DOCKER_SOCK = {"none", "read-only"}
+ALLOWLIST_KINDS = {"comm", "cgroup", "pid", "image", "tool", "path", "exe"}
 MIN_INTERVAL = 5
 PROTECTED_NEVER = ("pid:1", "guardian_self", "allowlisted_instance")
+BLOCK_NEVER = ("pid:1", "guardian_self", "allowlisted_instance", "in_use_tool")
 REQUIRED_FORBIDS = (
     "kill_without_grant",
     "kill_pid_1",
     "kill_guardian_self",
     "kill_allowlisted_instance",
     "treat_top_as_threat",
+    "treat_in_use_tool_as_threat",
     "treat_editor_as_host",
     "treat_visible_kill_as_grant",
     "treat_probe_noise_as_debt",
+)
+BLOCK_FORBIDS = (
+    "block_without_grant",
+    "block_pid_1",
+    "block_guardian_self",
+    "block_allowlisted_instance",
+    "block_in_use_tool",
+    "treat_visible_block_as_grant",
+    "mount_docker_sock_rw_by_default",
 )
 
 NOISE_QUESTION = (
@@ -101,6 +146,20 @@ GRANT_QUESTION = (
 SOURCE_QUESTION = (
     "The implementing product must probe the live host, not an editor buffer. "
     "Confirm the policy source is live-host or an injected snapshot of that host."
+)
+INUSE_QUESTION = (
+    "Tools currently in use (shells, Cursor, Docker engine, instance services) "
+    "are inventory, not threats, until interview/policy says otherwise. Which "
+    "comms/images has the founder confirmed as in-use on this instance?"
+)
+BLOCK_QUESTION = (
+    "A visible Block control is not a POA grant. Is capability://hostguard/"
+    "block/v1 explicitly granted, or is observe+ticket+notify the only effect?"
+)
+NOTIFY_QUESTION = (
+    "Founder notify uses browser-push and desktop. Without VAPID keys the "
+    "product must stub the channel (receipt + local poll event) and must not "
+    "invent secrets. Who is the audience? (founder only)"
 )
 
 
@@ -212,6 +271,31 @@ def validate_interview(document: Mapping[str, Any]) -> list[Finding]:
         findings.append(Finding("HG-SERVE-001", "probe_source must not be editor-view", "$.probe_source"))
     elif source not in SOURCES:
         findings.append(Finding("HG-KIND-001", "unknown probe_source", "$.probe_source"))
+    scopes = document.get("scopes")
+    if scopes is not None:
+        if not isinstance(scopes, list) or not scopes:
+            findings.append(Finding("HG-SCOPE-001", "scopes must be a non-empty list", "$.scopes"))
+        else:
+            unknown = [item for item in scopes if item not in SCOPES]
+            if unknown:
+                findings.append(Finding("HG-SCOPE-001", f"unknown scopes {unknown}", "$.scopes"))
+    sock = document.get("docker_sock_policy")
+    if sock is not None and sock not in DOCKER_SOCK:
+        findings.append(
+            Finding(
+                "HG-DOCKER-001",
+                "docker_sock_policy must be none or read-only; RW is not a valid default",
+                "$.docker_sock_policy",
+            )
+        )
+    channels = document.get("notify_channels")
+    if channels is not None:
+        unknown = [item for item in channels if item not in CHANNELS]
+        if unknown:
+            findings.append(Finding("HG-NOTIFY-001", f"unknown notify channels {unknown}", "$.notify_channels"))
+    audience = document.get("audience")
+    if audience is not None and audience != "founder":
+        findings.append(Finding("HG-NOTIFY-001", "audience must be founder", "$.audience"))
     return findings
 
 
@@ -222,6 +306,7 @@ def _classification(
     actions: Sequence[str],
     extra_forbid: Sequence[str] = (),
     questions: Sequence[str] = (),
+    scope: str | None = None,
 ) -> dict[str, Any]:
     item: dict[str, Any] = {
         "id": ident,
@@ -230,9 +315,20 @@ def _classification(
         "actions": [{"do": name} for name in actions],
         "forbid": list(dict.fromkeys(extra_forbid)),
     }
+    if scope:
+        item["scope"] = scope
     if questions:
         item["questions"] = list(questions)
     return item
+
+
+def _default_scopes(answers: Mapping[str, Any]) -> list[str]:
+    scopes = list(answers.get("scopes") or [])
+    if scopes:
+        return scopes
+    if answers.get("host_kind") == "container":
+        return ["container"]
+    return ["host"]
 
 
 def classify(answers: Mapping[str, Any]) -> dict[str, Any]:
@@ -241,23 +337,36 @@ def classify(answers: Mapping[str, Any]) -> dict[str, Any]:
     classifications: list[dict[str, Any]] = []
     questions: list[str] = []
     granted = bool(answers.get("kill_granted"))
+    block_granted = bool(answers.get("block_granted"))
     source = answers.get("probe_source") or "live-host"
     treat_top = bool(answers.get("treat_top_as_threat"))
+    treat_in_use = bool(answers.get("treat_in_use_as_threat"))
     visible_kill = bool(answers.get("visible_kill_control"))
+    visible_block = bool(answers.get("visible_block_control"))
     noise = bool(answers.get("analyzer_or_top_noise"))
+    notify_founder = answers.get("notify_founder")
+    if notify_founder is None:
+        notify_founder = True
+    channels = list(answers.get("notify_channels") or ["browser-push", "desktop"])
+    audience = answers.get("audience") or "founder"
+    scopes = _default_scopes(answers)
+    docker_sock = answers.get("docker_sock_policy") or "none"
+    signals = list(answers.get("signals") or ["cpu", "ram", "storage"])
 
     classifications.append(
         _classification(
             "inventory-vs-runtime",
             "inventory_vs_runtime",
-            "A high CPU, RAM, or disk number in top is not a threat until the process is classified against the allowlist, cgroup, and instance services.",
-            ("classify_before_threat", "observe"),
-            ("treat_top_as_threat",),
-            (NOISE_QUESTION,) if treat_top else (),
+            "A high CPU, RAM, or disk number in top is not a threat until the process is classified against the allowlist, cgroup, in-use tools, and instance services.",
+            ("classify_before_threat", "observe", "skip_in_use_tool"),
+            ("treat_top_as_threat", "treat_in_use_tool_as_threat"),
+            (NOISE_QUESTION, INUSE_QUESTION) if treat_top or treat_in_use else (),
         )
     )
     if treat_top:
         questions.append(NOISE_QUESTION)
+    if treat_in_use:
+        questions.append(INUSE_QUESTION)
 
     classifications.append(
         _classification(
@@ -272,18 +381,28 @@ def classify(answers: Mapping[str, Any]) -> dict[str, Any]:
     if source != "live-host":
         questions.append(SOURCE_QUESTION)
 
+    cap_actions = ["require_kill_grant", "require_block_grant"]
+    if not granted:
+        cap_actions.append("refuse_kill")
+    if not block_granted:
+        cap_actions.append("refuse_block")
     classifications.append(
         _classification(
             "capability-surface",
             "capability_surface",
-            "A visible Kill button is not a wellmanifest.poa grant. unknownPolicy=reject; observe+warn+ticket is the default effect.",
-            ("require_kill_grant", "refuse_kill") if not granted else ("require_kill_grant",),
-            ("treat_visible_kill_as_grant", "kill_without_grant"),
-            (GRANT_QUESTION,) if visible_kill or not granted else (),
+            "A visible Kill or Block button is not a wellmanifest.poa grant. unknownPolicy=reject; observe+warn+ticket+notify_founder is the default effect.",
+            tuple(cap_actions),
+            ("treat_visible_kill_as_grant", "treat_visible_block_as_grant", "kill_without_grant", "block_without_grant"),
+            (GRANT_QUESTION, BLOCK_QUESTION) if visible_kill or visible_block or not granted or not block_granted else (),
         )
     )
     if visible_kill or not granted:
         questions.append(GRANT_QUESTION)
+    if visible_block or not block_granted:
+        questions.append(BLOCK_QUESTION)
+
+    if notify_founder:
+        questions.append(NOTIFY_QUESTION)
 
     if noise:
         classifications.append(
@@ -298,36 +417,99 @@ def classify(answers: Mapping[str, Any]) -> dict[str, Any]:
         )
         questions.append(NOISE_QUESTION)
 
+    security_signals = {
+        "listener": ("unexpected-listener", "unexpected_listener", "host", "An unexpected listener is a finding only after in-use tools and allowlisted services are skipped."),
+        "docker_sock": ("docker-socket-exposure", "docker_socket_exposure", "docker-engine", "docker.sock exposure on a developer host is in-scope. Default is no RW mount; host-inspect is preferred."),
+        "docker_privileged": ("docker-privileged", "docker_privileged", "container", "A privileged container is a capability hole. Observe+notify unless block is granted."),
+        "cap_escalation": ("capability-escalation", "capability_escalation", "container", "Host PID namespace or extra capabilities are in-scope for a developer host."),
+        "unknown_binary": ("unknown-binary", "unknown_binary", "container", "Unknown binaries in containers fail closed unless allowlisted or currently in use."),
+        "crypto_miner": ("crypto-miner-pattern", "crypto_miner_pattern", "host", "Crypto-miner patterns are suspicious only after skipping in-use developer tools."),
+    }
+    want_security = bool(set(signals) & set(security_signals)) or "docker-engine" in scopes or "container" in scopes
+    if want_security:
+        classifications.append(
+            _classification(
+                "suspicious-process",
+                "suspicious_process",
+                "A process is suspicious only after allowlist and in-use tools are skipped. Unused unknown processes may be ticketed and the founder notified.",
+                ("classify_before_threat", "observe", "notify_founder", "write_ticket"),
+                ("treat_in_use_tool_as_threat", "block_without_grant"),
+                (INUSE_QUESTION,),
+                scope="host" if "host" in scopes else scopes[0],
+            )
+        )
+        for signal, (ident, kind, scope, rationale) in security_signals.items():
+            if signal in signals or (signal.startswith("docker") and "docker-engine" in scopes) or (
+                signal in {"cap_escalation", "unknown_binary", "docker_privileged"} and "container" in scopes
+            ):
+                actions = ("observe", "notify_founder", "write_ticket", "propose_block" if block_granted else "refuse_block")
+                classifications.append(
+                    _classification(
+                        ident,
+                        kind,
+                        rationale,
+                        actions,
+                        ("treat_in_use_tool_as_threat", "block_without_grant", "mount_docker_sock_rw_by_default"),
+                        scope=scope if scope in scopes else scopes[0],
+                    )
+                )
+
     allowlist = []
     for comm in answers.get("allowlist_comms") or []:
         allowlist.append({"kind": "comm", "value": comm})
     for cgroup in answers.get("instance_cgroups") or []:
         allowlist.append({"kind": "cgroup", "value": cgroup})
+    for image in answers.get("allowlist_images") or []:
+        allowlist.append({"kind": "image", "value": image})
+    for tool in answers.get("in_use_tools") or ["cursor", "bash", "zsh", "dockerd", "containerd"]:
+        allowlist.append({"kind": "tool", "value": tool})
     allowlist.append({"kind": "comm", "value": "hostguard"})
+    allowlist.append({"kind": "comm", "value": "guard-agent"})
+
+    in_use = {
+        "comms": list(answers.get("in_use_tools") or ["cursor", "bash", "zsh", "dockerd", "containerd"]),
+        "images": list(answers.get("allowlist_images") or []),
+        "skipUntilInterview": True,
+    }
+
+    forbid = list(REQUIRED_FORBIDS) + list(BLOCK_FORBIDS)
 
     return {
         "schema": SCHEMA_POLICY,
         "id": answers["subject_id"],
-        "version": "0.1.0",
-        "purpose": answers.get("purpose") or "Classify host process threats before warn, ticket, or kill.",
+        "version": "0.2.0",
+        "purpose": answers.get("purpose") or "Classify host process threats before warn, ticket, notify, or block.",
         "probe": {
             "intervalSeconds": int(answers["probe_interval_seconds"]),
             "source": source,
-            "signals": list(answers.get("signals") or ["cpu", "ram", "storage"]),
+            "signals": signals,
+            "scopes": scopes,
+            "dockerSock": docker_sock if docker_sock in DOCKER_SOCK else "none",
         },
         "policy": {
             "unknownPolicy": "reject",
             "effectModel": "observe-default",
             "defaultAction": "observe",
-            "escalation": ["observe", "warn", "ticket", "escalate"],
+            "escalation": ["observe", "warn", "ticket", "notify_founder", "escalate"],
             "kill": {
                 "capability": KILL_CAPABILITY,
                 "granted": granted,
                 "never": list(PROTECTED_NEVER),
             },
-            "forbid": list(REQUIRED_FORBIDS),
+            "block": {
+                "capability": BLOCK_CAPABILITY,
+                "granted": block_granted,
+                "never": list(BLOCK_NEVER),
+            },
+            "notify": {
+                "audience": audience,
+                "channels": channels,
+                "payloadSchema": NOTIFY_PAYLOAD,
+            },
+            "forbid": list(dict.fromkeys(forbid)),
         },
         "allowlist": allowlist,
+        "inUse": in_use,
         "thresholds": {
             "cpuPercent": 90,
             "ramPercent": 90,
@@ -375,6 +557,19 @@ def validate_policy(document: Mapping[str, Any]) -> list[Finding]:
         unknown = [item for item in signals if item not in SIGNALS]
         if unknown:
             findings.append(Finding("HG-KIND-001", f"unknown signals {unknown}", "$.probe.signals"))
+    scopes = probe.get("scopes")
+    if scopes is not None:
+        if not isinstance(scopes, list) or not scopes:
+            findings.append(Finding("HG-SCOPE-001", "probe.scopes must be a non-empty list", "$.probe.scopes"))
+        else:
+            unknown_scopes = [item for item in scopes if item not in SCOPES]
+            if unknown_scopes:
+                findings.append(Finding("HG-SCOPE-001", f"unknown probe.scopes {unknown_scopes}", "$.probe.scopes"))
+    sock = probe.get("dockerSock")
+    if sock is not None and sock not in DOCKER_SOCK:
+        findings.append(
+            Finding("HG-DOCKER-001", "probe.dockerSock must be none or read-only", "$.probe.dockerSock")
+        )
 
     policy = document.get("policy") or {}
     if policy.get("unknownPolicy") != "reject":
@@ -384,15 +579,26 @@ def validate_policy(document: Mapping[str, Any]) -> list[Finding]:
     forbid = list(policy.get("forbid") or [])
     code_for = {
         "treat_top_as_threat": "HG-CLASSIFY-001",
+        "treat_in_use_tool_as_threat": "HG-INUSE-001",
         "treat_editor_as_host": "HG-SERVE-001",
         "treat_visible_kill_as_grant": "HG-POA-001",
+        "treat_visible_block_as_grant": "HG-BLOCK-001",
         "treat_probe_noise_as_debt": "HG-NOISE-001",
         "kill_without_grant": "HG-GRANT-001",
         "kill_pid_1": "HG-PID1-001",
         "kill_guardian_self": "HG-PID1-001",
         "kill_allowlisted_instance": "HG-GRANT-001",
+        "block_without_grant": "HG-BLOCK-001",
+        "block_pid_1": "HG-PID1-001",
+        "block_guardian_self": "HG-PID1-001",
+        "block_allowlisted_instance": "HG-BLOCK-001",
+        "block_in_use_tool": "HG-INUSE-001",
+        "mount_docker_sock_rw_by_default": "HG-DOCKER-001",
     }
-    for required in REQUIRED_FORBIDS:
+    required_forbids = list(REQUIRED_FORBIDS)
+    if policy.get("block") is not None:
+        required_forbids.extend(BLOCK_FORBIDS)
+    for required in required_forbids:
         if required not in forbid:
             findings.append(Finding(code_for[required], f"policy.forbid missing {required}", "$.policy.forbid"))
     unknown_forbid = [item for item in forbid if item not in FORBIDS]
@@ -414,6 +620,41 @@ def validate_policy(document: Mapping[str, Any]) -> list[Finding]:
     elif capability not in {None, KILL_CAPABILITY}:
         findings.append(Finding("HG-GRANT-001", "ungranted kill must not declare a foreign capability", "$.policy.kill.capability"))
 
+    block = policy.get("block")
+    if block is not None:
+        block_never = list(block.get("never") or [])
+        for required in BLOCK_NEVER:
+            if required not in block_never:
+                findings.append(Finding("HG-PID1-001", f"block.never missing {required}", "$.policy.block.never"))
+        block_cap = block.get("capability")
+        block_granted = bool(block.get("granted"))
+        if block_granted:
+            if not isinstance(block_cap, str) or not CAPABILITY.fullmatch(block_cap):
+                findings.append(Finding("HG-BLOCK-001", "granted block requires a capability:// ref", "$.policy.block.capability"))
+            elif block_cap != BLOCK_CAPABILITY:
+                findings.append(Finding("HG-BLOCK-001", f"unknown block capability {block_cap!r}", "$.policy.block.capability"))
+        elif block_cap not in {None, BLOCK_CAPABILITY}:
+            findings.append(Finding("HG-BLOCK-001", "ungranted block must not declare a foreign capability", "$.policy.block.capability"))
+
+    notify = policy.get("notify")
+    if notify is not None:
+        if notify.get("audience") != "founder":
+            findings.append(Finding("HG-NOTIFY-001", "notify.audience must be founder", "$.policy.notify.audience"))
+        notify_channels = notify.get("channels") or []
+        if not notify_channels:
+            findings.append(Finding("HG-NOTIFY-001", "notify.channels must be non-empty", "$.policy.notify.channels"))
+        unknown_channels = [item for item in notify_channels if item not in CHANNELS]
+        if unknown_channels:
+            findings.append(Finding("HG-NOTIFY-001", f"unknown notify channels {unknown_channels}", "$.policy.notify.channels"))
+        payload = notify.get("payloadSchema")
+        if payload not in {None, NOTIFY_PAYLOAD}:
+            findings.append(Finding("HG-NOTIFY-001", "unknown notify payload schema", "$.policy.notify.payloadSchema"))
+
+    for index, entry in enumerate(document.get("allowlist") or []):
+        kind = entry.get("kind")
+        if kind not in ALLOWLIST_KINDS:
+            findings.append(Finding("HG-KIND-001", f"unknown allowlist kind {kind!r}", f"$.allowlist[{index}].kind"))
+
     kinds_seen: set[str] = set()
     for index, item in enumerate(document.get("classifications") or []):
         prefix = f"$.classifications[{index}]"
@@ -422,6 +663,9 @@ def validate_policy(document: Mapping[str, Any]) -> list[Finding]:
             findings.append(Finding("HG-KIND-001", f"unknown kind {kind!r}", f"{prefix}.kind"))
             continue
         kinds_seen.add(kind)
+        scope = item.get("scope")
+        if scope is not None and scope not in SCOPES:
+            findings.append(Finding("HG-SCOPE-001", f"unknown classification scope {scope!r}", f"{prefix}.scope"))
         for action in item.get("actions") or []:
             if action.get("do") not in ACTIONS:
                 findings.append(Finding("HG-KIND-001", f"unknown action {action.get('do')!r}", f"{prefix}.actions"))
@@ -435,11 +679,18 @@ def validate_policy(document: Mapping[str, Any]) -> list[Finding]:
                 findings.append(Finding("HG-CLASSIFY-001", "inventory_vs_runtime needs classify_before_threat", prefix))
             if "treat_top_as_threat" not in item_forbid:
                 findings.append(Finding("HG-CLASSIFY-001", "inventory_vs_runtime must forbid treat_top_as_threat", prefix))
+            if "treat_in_use_tool_as_threat" not in item_forbid:
+                findings.append(Finding("HG-INUSE-001", "inventory_vs_runtime must forbid treat_in_use_tool_as_threat", prefix))
         if kind == "capability_surface":
             if "require_kill_grant" not in actions:
                 findings.append(Finding("HG-POA-001", "capability_surface needs require_kill_grant", prefix))
             if "treat_visible_kill_as_grant" not in item_forbid:
                 findings.append(Finding("HG-POA-001", "capability_surface must forbid treat_visible_kill_as_grant", prefix))
+            if block is not None:
+                if "require_block_grant" not in actions:
+                    findings.append(Finding("HG-BLOCK-001", "capability_surface needs require_block_grant when block is declared", prefix))
+                if "treat_visible_block_as_grant" not in item_forbid:
+                    findings.append(Finding("HG-BLOCK-001", "capability_surface must forbid treat_visible_block_as_grant when block is declared", prefix))
         if kind == "served_artifact" and "treat_editor_as_host" not in item_forbid:
             findings.append(Finding("HG-SERVE-001", "served_artifact must forbid treat_editor_as_host", prefix))
         if kind == "probe_noise" and "treat_probe_noise_as_debt" not in item_forbid:
@@ -462,6 +713,8 @@ def render_dsl(document: Mapping[str, Any]) -> str:
     probe = document["probe"]
     policy = document["policy"]
     kill = policy.get("kill") or {}
+    block = policy.get("block") or {}
+    notify = policy.get("notify") or {}
     lines = [
         "DOCUMENT HOSTGUARD",
         f"ID {document['id']}",
@@ -471,6 +724,10 @@ def render_dsl(document: Mapping[str, Any]) -> str:
     if document.get("purpose"):
         lines.append(f"PURPOSE {_quote(str(document['purpose']))}")
     lines += ["", "PROBE", f"  INTERVAL {probe['intervalSeconds']}", f"  SOURCE {probe['source']}"]
+    for scope in probe.get("scopes") or []:
+        lines.append(f"  SCOPE {scope}")
+    if probe.get("dockerSock"):
+        lines.append(f"  DOCKER_SOCK {probe['dockerSock']}")
     for signal in probe.get("signals") or []:
         lines.append(f"  SIGNAL {signal}")
     lines += ["", "POLICY observe-default", f"  UNKNOWN {policy.get('unknownPolicy', 'reject')}", f"  DEFAULT {policy.get('defaultAction', 'observe')}"]
@@ -484,12 +741,36 @@ def render_dsl(document: Mapping[str, Any]) -> str:
     )
     for item in kill.get("never") or []:
         lines.append(f"  NEVER {item}")
+    if block:
+        lines.append(
+            "  BLOCK granted={granted} capability={capability}".format(
+                granted=str(bool(block.get("granted"))).lower(),
+                capability=block.get("capability") or BLOCK_CAPABILITY,
+            )
+        )
+        for item in block.get("never") or []:
+            lines.append(f"  NEVER {item}")
     for item in policy.get("forbid") or []:
         lines.append(f"  FORBID {item}")
+    if notify:
+        lines += ["", "NOTIFY", f"  AUDIENCE {notify.get('audience', 'founder')}"]
+        for channel in notify.get("channels") or []:
+            lines.append(f"  CHANNEL {channel}")
+        if notify.get("payloadSchema"):
+            lines.append(f"  PAYLOAD {notify['payloadSchema']}")
     if document.get("allowlist"):
         lines += ["", "ALLOWLIST"]
         for entry in document["allowlist"]:
             lines.append(f"  {entry['kind'].upper()} {entry['value']}")
+    in_use = document.get("inUse") or {}
+    if in_use:
+        lines += ["", "INUSE"]
+        if "skipUntilInterview" in in_use:
+            lines.append(f"  SKIP {str(bool(in_use.get('skipUntilInterview'))).lower()}")
+        for comm in in_use.get("comms") or []:
+            lines.append(f"  COMM {comm}")
+        for image in in_use.get("images") or []:
+            lines.append(f"  IMAGE {image}")
     thresholds = document.get("thresholds") or {}
     if thresholds:
         lines += ["", "THRESHOLDS"]
@@ -497,6 +778,8 @@ def render_dsl(document: Mapping[str, Any]) -> str:
             lines.append(f"  {key} {value}")
     for item in document.get("classifications") or []:
         lines += ["", f"CLASSIFY {item['id']}", f"  KIND {item['kind']}"]
+        if item.get("scope"):
+            lines.append(f"  SCOPE {item['scope']}")
         if item.get("rationale"):
             lines.append(f"  RATIONALE {_quote(item['rationale'])}")
         for action in item.get("actions") or []:
@@ -523,15 +806,22 @@ def _unquote(value: str) -> str:
 def parse_dsl(text: str) -> dict[str, Any]:
     document: dict[str, Any] = {
         "schema": SCHEMA_POLICY,
-        "probe": {"signals": []},
-        "policy": {"effectModel": "observe-default", "escalation": [], "kill": {"never": []}, "forbid": []},
+        "probe": {"signals": [], "scopes": []},
+        "policy": {
+            "effectModel": "observe-default",
+            "escalation": [],
+            "kill": {"never": []},
+            "forbid": [],
+        },
         "allowlist": [],
+        "inUse": {"comms": [], "images": []},
         "thresholds": {},
         "classifications": [],
         "questions": [],
     }
     section = "root"
     current: dict[str, Any] | None = None
+    never_owner: dict[str, Any] | None = None
     for raw_line in text.splitlines():
         line = raw_line.rstrip()
         if not line.strip():
@@ -555,8 +845,16 @@ def parse_dsl(text: str) -> dict[str, Any]:
                 section, current = "probe", document["probe"]
             elif head == "POLICY":
                 section, current = "policy", document["policy"]
+                never_owner = current["kill"]
+            elif head == "NOTIFY":
+                section = "notify"
+                current = document["policy"].setdefault(
+                    "notify", {"channels": [], "audience": "founder", "payloadSchema": NOTIFY_PAYLOAD}
+                )
             elif head == "ALLOWLIST":
                 section, current = "allowlist", document
+            elif head == "INUSE":
+                section, current = "inuse", document["inUse"]
             elif head == "THRESHOLDS":
                 section, current = "thresholds", document["thresholds"]
             elif head == "CLASSIFY":
@@ -571,6 +869,10 @@ def parse_dsl(text: str) -> dict[str, Any]:
                 current["intervalSeconds"] = int(rest)
             elif head == "SOURCE":
                 current["source"] = rest
+            elif head == "SCOPE":
+                current.setdefault("scopes", []).append(rest)
+            elif head == "DOCKER_SOCK":
+                current["dockerSock"] = rest
             elif head == "SIGNAL":
                 current["signals"].append(rest)
         elif section == "policy" and current is not None:
@@ -582,23 +884,50 @@ def parse_dsl(text: str) -> dict[str, Any]:
                 current["escalation"].append(rest)
             elif head == "KILL":
                 current["kill"]["capability"] = KILL_CAPABILITY
+                never_owner = current["kill"]
                 for part in rest.split():
                     key, _, value = part.partition("=")
                     if key == "granted":
                         current["kill"]["granted"] = value == "true"
                     elif key == "capability":
                         current["kill"]["capability"] = value
+            elif head == "BLOCK":
+                block = current.setdefault("block", {"never": [], "capability": BLOCK_CAPABILITY})
+                never_owner = block
+                for part in rest.split():
+                    key, _, value = part.partition("=")
+                    if key == "granted":
+                        block["granted"] = value == "true"
+                    elif key == "capability":
+                        block["capability"] = value
             elif head == "NEVER":
-                current["kill"].setdefault("never", []).append(rest)
+                target = never_owner if never_owner is not None else current["kill"]
+                target.setdefault("never", []).append(rest)
             elif head == "FORBID":
                 current["forbid"].append(rest)
+        elif section == "notify" and current is not None:
+            if head == "AUDIENCE":
+                current["audience"] = rest
+            elif head == "CHANNEL":
+                current.setdefault("channels", []).append(rest)
+            elif head == "PAYLOAD":
+                current["payloadSchema"] = rest
         elif section == "allowlist":
             document["allowlist"].append({"kind": head.lower(), "value": rest})
+        elif section == "inuse" and current is not None:
+            if head == "SKIP":
+                current["skipUntilInterview"] = rest == "true"
+            elif head == "COMM":
+                current.setdefault("comms", []).append(rest)
+            elif head == "IMAGE":
+                current.setdefault("images", []).append(rest)
         elif section == "thresholds" and current is not None:
             current[head] = float(rest) if "." in rest else int(rest)
         elif section == "classify" and current is not None:
             if head == "KIND":
                 current["kind"] = rest
+            elif head == "SCOPE":
+                current["scope"] = rest
             elif head == "RATIONALE":
                 current["rationale"] = _unquote(rest)
             elif head == "ACTION":
@@ -609,6 +938,14 @@ def parse_dsl(text: str) -> dict[str, Any]:
                 current["questions"].append(_unquote(rest))
         elif section == "questions" and head == "QUESTION":
             document["questions"].append(_unquote(rest))
+    if not document["probe"].get("scopes"):
+        document["probe"].pop("scopes", None)
+    in_use = document.get("inUse") or {}
+    if not in_use.get("comms") and not in_use.get("images") and "skipUntilInterview" not in in_use:
+        document.pop("inUse", None)
+    if not (document.get("policy") or {}).get("notify", {}).get("channels") and "notify" in document.get("policy", {}):
+        if document["policy"]["notify"] == {"channels": [], "audience": "founder", "payloadSchema": NOTIFY_PAYLOAD}:
+            document["policy"].pop("notify", None)
     for item in document["classifications"]:
         if not item.get("questions"):
             item.pop("questions", None)

@@ -13,9 +13,10 @@ must not contain `os.kill` or a probe loop.
 
 ## Remediation
 
-Keep observe+warn+ticket as the default. Put kill behind an explicit grant
-in `subactor/hostguard`. Refuse PID 1, self, and allowlisted comms/cgroups.
-Receipt the effect with `wellmanifest.logs` / `poa.receipt/v1`.
+Keep observe+warn+ticket+notify as the default. Put kill behind an explicit
+grant in `subactor/hostguard`. Refuse PID 1, self, and allowlisted comms/cgroups.
+Receipt the effect with `wellmanifest.logs` / `poa.receipt/v1`. Block is a
+separate capability owned by `subactor/guard-agent`.
 
 ## Verification
 

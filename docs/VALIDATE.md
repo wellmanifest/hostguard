@@ -33,8 +33,14 @@ A JSON or `DOCUMENT HOSTGUARD` text file.
 | `HG-POA-001` | missing `capability_surface` or `treat_visible_kill_as_grant` forbid |
 | `HG-SERVE-001` | editor-view source, or missing `treat_editor_as_host` forbid |
 | `HG-NOISE-001` | probe noise treated as debt |
+| `HG-BLOCK-001` | block granted without hostguard capability, or chrome treated as block grant |
+| `HG-NOTIFY-001` | notify audience is not founder, or unknown channel |
+| `HG-SCOPE-001` | unknown probe/classification scope |
+| `HG-INUSE-001` | in-use tools treated as threats |
+| `HG-DOCKER-001` | docker.sock RW default / invalid dockerSock |
 
 ## Examples
 
 `examples/invalid/unknown-policy-preserve.hostguard.json` must fail with
-`HG-UNKNOWN-001`.
+`HG-UNKNOWN-001`. `examples/invalid/block-without-grant.hostguard.json`
+must fail with `HG-BLOCK-001`.

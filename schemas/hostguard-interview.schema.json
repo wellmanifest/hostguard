@@ -30,20 +30,60 @@
       "type": "array",
       "minItems": 1,
       "items": {
-        "enum": ["cpu", "ram", "storage", "power", "fd", "inode", "zombie", "fork_bomb", "runaway"]
+        "enum": [
+          "cpu",
+          "ram",
+          "storage",
+          "power",
+          "fd",
+          "inode",
+          "zombie",
+          "fork_bomb",
+          "runaway",
+          "listener",
+          "docker_sock",
+          "docker_privileged",
+          "cap_escalation",
+          "unknown_binary",
+          "crypto_miner"
+        ]
       }
     },
     "probe_source": { "enum": ["live-host", "injected-snapshot"] },
+    "scopes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "enum": ["host", "container", "docker-engine"] }
+    },
+    "docker_sock_policy": { "enum": ["none", "read-only"] },
     "allowlist_comms": {
       "type": "array",
       "items": { "type": "string", "minLength": 1, "maxLength": 80 }
+    },
+    "allowlist_images": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 200 }
     },
     "instance_cgroups": {
       "type": "array",
       "items": { "type": "string", "minLength": 1, "maxLength": 200 }
     },
+    "in_use_tools": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 80 }
+    },
+    "treat_in_use_as_threat": { "type": "boolean" },
     "kill_granted": { "type": "boolean" },
+    "block_granted": { "type": "boolean" },
     "visible_kill_control": { "type": "boolean" },
+    "visible_block_control": { "type": "boolean" },
+    "notify_founder": { "type": "boolean" },
+    "notify_channels": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "enum": ["browser-push", "desktop"] }
+    },
+    "audience": { "const": "founder" },
     "treat_top_as_threat": { "type": "boolean" },
     "analyzer_or_top_noise": { "type": "boolean" }
   }
