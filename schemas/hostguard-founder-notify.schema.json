@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://wellmanifest.dev/schemas/hostguard/founder-notify/v1",
+  "$id": "https://wellmanifest.com/schemas/hostguard/founder-notify/v1",
   "title": "Founder notification payload for hostguard / guard-agent",
   "description": "Shape of a founder-facing notify. The pack does not send notifications. Receipts belong to wellmanifest.logs / poa.receipt/v1 in the product. Do not put VAPID private keys or subscription secrets in this document.",
   "type": "object",

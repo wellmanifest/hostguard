@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://wellmanifest.dev/schemas/hostguard/interview/v1",
+  "$id": "https://wellmanifest.com/schemas/hostguard/interview/v1",
   "title": "Wellmanifest hostguard interview answers v1",
   "type": "object",
   "additionalProperties": false,

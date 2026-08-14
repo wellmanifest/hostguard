@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://wellmanifest.dev/schemas/hostguard/policy/v1",
+  "$id": "https://wellmanifest.com/schemas/hostguard/policy/v1",
   "title": "Wellmanifest hostguard policy document v1",
   "description": "Canonical host-threat policy. Propose-only: the document never probes a host or authorizes a kill or block. Implementing products are subactor/hostguard (resources) and subactor/guard-agent (security holes, notify, granted block).",
   "type": "object",
