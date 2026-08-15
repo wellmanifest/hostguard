@@ -97,6 +97,11 @@
       "digest": "sha256:691fa1cde688b3cf76fd8c59b5ac26016bf6c29aca2440a910cacf39051cfe73"
     },
     {
+      "path": "docs/RAPL.md",
+      "role": "documentation",
+      "digest": "sha256:2f1f2d4c4acf1d256780e74442ad52d575ad55ad959b0efe741f47d169e0d5e1"
+    },
+    {
       "path": "docs/ERROR/HG-KIND-001.md",
       "role": "documentation",
       "digest": "sha256:83664e62c9bc2199e8c03a4b8b40b41e8d961c1c77e10f3658c84b704b07a35d"
@@ -195,6 +200,11 @@
       "path": "examples/linux-dev-docker.hostguard.dsl",
       "role": "example",
       "digest": "sha256:aaedc6e97a113a796831df131a8b2ec07065b7bef4c8edd223c4814f678f7172"
+    },
+    {
+      "path": "examples/fixtures/rapl-two-sample.json",
+      "role": "example",
+      "digest": "sha256:578df8fbec5daac5394156746c6e63ff05addb9079607e904fa2c56046d7906d"
     }
   ],
   "namespaces": [
@@ -235,7 +245,7 @@
     "commandRoot": "docs",
     "errorRoot": "docs/ERROR",
     "criticalRoot": "docs/CRITICAL",
-    "commands": ["HOSTGUARD", "INTERVIEW", "CLASSIFY", "SUGGEST", "VALIDATE", "NOTIFY", "DOCKER"],
+    "commands": ["HOSTGUARD", "INTERVIEW", "CLASSIFY", "SUGGEST", "VALIDATE", "NOTIFY", "DOCKER", "RAPL"],
     "errorCodes": [
       "HG-KIND-001",
       "HG-GRANT-001",

@@ -1,0 +1,27 @@
+{
+  "schema": "wellmanifest.hostguard/rapl-sample/v1",
+  "note": "Document-only two-sample. Not a live probe. Product: subactor/hostguard.",
+  "firstEnergyUj": 10000000,
+  "secondEnergyUj": 12000000,
+  "elapsedSeconds": 0.1,
+  "maxEnergyRangeUj": 65535000000,
+  "powerWatts": 20.0,
+  "snapshot": {
+    "schema": "wellmanifest.hostguard/snapshot/v1",
+    "hostId": "linux.generic",
+    "source": "injected-snapshot",
+    "selfPid": 99,
+    "host": {
+      "cpuPercent": 10,
+      "ramPercent": 20,
+      "storagePercent": 15,
+      "powerWatts": 20.0,
+      "fdUsed": 1024,
+      "fdMax": 100000,
+      "inodePercent": 5,
+      "zombieCount": 0,
+      "processCount": 40
+    },
+    "processes": []
+  }
+}

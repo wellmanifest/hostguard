@@ -105,5 +105,8 @@ Scope is `host` | `container` | `docker-engine`.
 - [`wellmanifest/logs`](https://github.com/wellmanifest/logs) — event/receipt shape the product emits
 - [`wellmanifest/poa`](https://github.com/wellmanifest/poa) — grant / `unknownPolicy=reject`
 - [`wellmanifest/new-project`](https://github.com/wellmanifest/new-project) — optional later governance
-- [`subactor/hostguard`](https://github.com/subactor/hostguard) — cyclic resource probe
+- [`subactor/hostguard`](https://github.com/subactor/hostguard) — cyclic resource probe (RAPL two-sample watts live there, not here)
 - [`subactor/guard-agent`](https://github.com/subactor/guard-agent) — holes, notify, granted block
+
+Document-only RAPL sample: [`docs/RAPL.md`](docs/RAPL.md),
+`examples/fixtures/rapl-two-sample.json`. This pack does not read sysfs.

@@ -12,6 +12,8 @@ All notable changes to this project are documented in this file.
 - Founder notify channels `browser-push` and `desktop` (payload schema;
   receipts via wellmanifest.logs). Pack remains propose-only.
 - `probe.dockerSock` is `none` or `read-only`. RW is invalid.
+- Document-only RAPL two-sample (`docs/RAPL.md`); the live reader stays in
+  subactor/hostguard. This pack still does not probe.
 
 ## [0.1.0-dev]
 

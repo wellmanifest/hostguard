@@ -169,8 +169,18 @@ class ProjectionTests(unittest.TestCase):
 class PackSurfaceTests(unittest.TestCase):
     def test_module_has_no_host_agent(self) -> None:
         source = (ROOT / "src" / "hostguard.py").read_text(encoding="utf-8")
-        for forbidden in ("read_live_snapshot", "apply_kill", "/proc", "os.kill", "SIGKILL", "watch"):
+        for forbidden in ("read_live_snapshot", "apply_kill", "/proc", "os.kill", "SIGKILL", "watch", "energy_uj", "powercap"):
             self.assertNotIn(forbidden, source)
+
+    def test_rapl_sample_is_document_math_not_a_probe(self) -> None:
+        sample = _load("fixtures/rapl-two-sample.json")
+        self.assertEqual(sample["schema"], "wellmanifest.hostguard/rapl-sample/v1")
+        self.assertIn("not a live probe", sample["note"].lower())
+        delta = sample["secondEnergyUj"] - sample["firstEnergyUj"]
+        watts = round(delta / sample["elapsedSeconds"] / 1_000_000.0, 3)
+        self.assertEqual(watts, sample["powerWatts"])
+        self.assertEqual(sample["snapshot"]["host"]["powerWatts"], 20.0)
+        self.assertEqual(sample["snapshot"]["source"], "injected-snapshot")
 
     def test_validate_cli(self) -> None:
         self.assertEqual(hostguard.main(["validate", str(EXAMPLES / "linux-host.hostguard.json")]), 0)
