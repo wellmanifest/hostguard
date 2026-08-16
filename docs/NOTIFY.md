@@ -15,6 +15,41 @@ NOTIFY
   PAYLOAD wellmanifest.hostguard/founder-notify/v1
 ```
 
+## Inputs
+
+- a validated hostguard finding;
+- an explicit `notify_founder` action or a granted block;
+- one or more configured delivery channels;
+- a payload conforming to `wellmanifest.hostguard/founder-notify/v1`.
+
+## Outputs
+
+The implementing product emits a founder-scoped notification attempt and a
+secret-free receipt. This domain pack defines the shape; it does not deliver
+the notification or append an event stream.
+
+## Errors
+
+- `HG-NOTIFY-001` — the audience, channel, payload, or receipt is invalid.
+- Missing private delivery credentials must produce a stubbed local receipt,
+  not an invented secret and not an unreported success.
+
+## Examples
+
+```json
+{
+  "channel": "desktop",
+  "audience": "founder",
+  "policyId": "hostguard.dev-machine",
+  "occurredAt": "2026-08-16T20:00:00Z",
+  "scope": "host",
+  "kind": "unknown_binary",
+  "action": "notify_founder",
+  "blocked": false,
+  "body": "Unknown unused process observed; in-use tools were skipped."
+}
+```
+
 ## Payload shape
 
 Canonical JSON: `schemas/hostguard-founder-notify.schema.json`.

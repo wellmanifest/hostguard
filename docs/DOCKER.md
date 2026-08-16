@@ -5,6 +5,43 @@
 Declare Docker-related finding kinds and how policy applies to a
 **developer** host and to containerized instances of the agent.
 
+## Syntax
+
+```text
+DOCKER
+  SCOPE docker-engine
+  PROBE dockerSock read-only
+  DEFAULT observe
+```
+
+## Inputs
+
+- recorded engine, container, listener, and process observations;
+- an explicit scope: `host`, `container`, or `docker-engine`;
+- the declared `probe.dockerSock` mode;
+- an optional capability grant for a blocking action.
+
+## Outputs
+
+The validator produces classified findings and proposed actions. It does not
+open `docker.sock`, stop a container, kill a process, or mutate engine state.
+
+## Errors
+
+- `HG-DOCKER-001` — an unsupported Docker probe mode or unsafe socket access
+  was declared.
+- `HG-GRANT-001` — a blocking action lacks the required capability grant.
+
+## Examples
+
+```text
+DOCKER
+  SCOPE container
+  PROBE dockerSock none
+  FINDING docker_privileged
+  ACTION notify_founder
+```
+
 ## Scopes
 
 | Scope | Meaning |

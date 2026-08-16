@@ -34,17 +34,17 @@
     {
       "path": "schemas/hostguard-policy.schema.json",
       "role": "normative-source",
-      "digest": "sha256:f34d5124ce9c7412eeb61f3a47df90a729c2c188ae2947c0b872650085d608fd"
+      "digest": "sha256:996f9a2f8e18ad6fd815a4b170a0754d022a690dad3d19c0244b895aab166d99"
     },
     {
       "path": "schemas/hostguard-interview.schema.json",
       "role": "schema",
-      "digest": "sha256:ac1d99cb83af506afb67cd81d495751348ef0c80846acfd3b3383b48666c0168"
+      "digest": "sha256:af133e72ecf5b69801b86f8884398ad9627f753d31b430a563dc834a25688f6a"
     },
     {
       "path": "schemas/hostguard-founder-notify.schema.json",
       "role": "schema",
-      "digest": "sha256:f7f89be47970371ec4f022ff49b1da404d7b51bbed2d05c51961945bbbc08d07"
+      "digest": "sha256:7c34b695f147500f18f2e630d314df4cc3f9f7aa0bd90af8a1fe89a62754a095"
     },
     {
       "path": "questions/interview.json",
@@ -89,12 +89,12 @@
     {
       "path": "docs/NOTIFY.md",
       "role": "documentation",
-      "digest": "sha256:c631afe61c3a5ffd1c24f0104a7db8768212c784fb1d4301d8ee9612e786bd69"
+      "digest": "sha256:30fd2c0d6b6d8af3abb305fdb106dc2058dc7134949b2a319d601d94f103bf08"
     },
     {
       "path": "docs/DOCKER.md",
       "role": "documentation",
-      "digest": "sha256:691fa1cde688b3cf76fd8c59b5ac26016bf6c29aca2440a910cacf39051cfe73"
+      "digest": "sha256:5a5399e788c315a8e6f0e689c99005cba9818e6f66b03e0cc39831461fc8e426"
     },
     {
       "path": "docs/RAPL.md",
@@ -184,7 +184,7 @@
     {
       "path": "examples/linux-host.hostguard.json",
       "role": "example",
-      "digest": "sha256:a66a78b1852ff7c09663c69f7a9f2fd94d15635907375217147d17fd492d6dd9"
+      "digest": "sha256:29a424587b524db51d71d494b0682f31886f97b18775484caf0247d278ea220a"
     },
     {
       "path": "examples/linux-host.hostguard.dsl",
@@ -194,7 +194,7 @@
     {
       "path": "examples/linux-dev-docker.hostguard.json",
       "role": "example",
-      "digest": "sha256:0213bf514d70bae66bccc20986e4b9c0ce04bb7d82a056afd531527324927abb"
+      "digest": "sha256:e72c0cd97e28eac043b70325a4acd397e8d5858b11e29d35d6638cdf868cdf34"
     },
     {
       "path": "examples/linux-dev-docker.hostguard.dsl",
@@ -256,7 +256,6 @@
       "HG-SERVE-001",
       "HG-NOISE-001",
       "HG-UNKNOWN-001",
-      "HG-BLOCK-001",
       "HG-NOTIFY-001",
       "HG-SCOPE-001",
       "HG-INUSE-001",
