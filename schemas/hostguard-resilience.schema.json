@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wellmanifest.com/schemas/hostguard-resilience.schema.json",
+  "title": "wellmanifest.hostguard/resilience/v1",
+  "description": "Conformance declaration a product ships to claim docs/RESILIENCE.md. Declarative only: it maps each RES rule to the product's own proof test or to an explicit, ticketed waiver.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "product", "scope", "rules"],
+  "properties": {
+    "schema": {"const": "wellmanifest.hostguard/resilience/v1"},
+    "product": {"type": "string", "minLength": 1},
+    "scope": {
+      "description": "Where the product runs; sizes which rules apply. A product with no daemon waives RES-003..007 with scope=cli.",
+      "enum": ["cli", "daemon", "agent", "fleet"]
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "storageFloorPercent": {"type": "number", "minimum": 5},
+        "storageFloorBytes": {"type": "integer", "minimum": 2147483648},
+        "readinessDeadlineSeconds": {"type": "number", "maximum": 10},
+        "socketCheckIntervalSeconds": {"type": "number", "maximum": 60}
+      }
+    },
+    "rules": {
+      "type": "object",
+      "propertyNames": {"pattern": "^RES-0(0[1-9]|1[01])$"},
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["status"],
+        "properties": {
+          "status": {"enum": ["proven", "waived"]},
+          "test": {"type": "string", "description": "Product test id or path that injects the fault."},
+          "waiver": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["ticket", "reason"],
+            "properties": {
+              "ticket": {"type": "string", "pattern": "^ticket-[0-9]{3,}$"},
+              "reason": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "allOf": [
+          {"if": {"properties": {"status": {"const": "proven"}}}, "then": {"required": ["test"]}},
+          {"if": {"properties": {"status": {"const": "waived"}}}, "then": {"required": ["waiver"]}}
+        ]
+      }
+    }
+  }
+}

@@ -108,5 +108,7 @@ Scope is `host` | `container` | `docker-engine`.
 - [`subactor/hostguard`](https://github.com/subactor/hostguard) — cyclic resource probe (RAPL two-sample watts live there, not here)
 - [`subactor/guard-agent`](https://github.com/subactor/guard-agent) — holes, notify, granted block
 
+Resilience conformance (disk full, stale daemon, dead socket): [`docs/RESILIENCE.md`](docs/RESILIENCE.md).
+
 Document-only RAPL sample: [`docs/RAPL.md`](docs/RAPL.md),
 `examples/fixtures/rapl-two-sample.json`. This pack does not read sysfs.

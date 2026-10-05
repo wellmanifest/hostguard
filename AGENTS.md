@@ -30,6 +30,10 @@ PYTHONPATH=src python3 -m hostguard validate examples/linux-dev-docker.hostguard
 - Analyzer/`top` noise → `probe_noise`. **Do not treat noise as debt.**
 - PID 1, guardian, allowlisted instance, in-use tool → never kill/block.
 - `unknownPolicy` must stay `reject`.
+- Any product claiming this standard MUST satisfy `docs/RESILIENCE.md`
+  (`RES-001`..`RES-011`): storage floor, ENOSPC as degraded state, sockets
+  outside `/tmp`, liveness by endpoint ping not PID, bounded readiness wait,
+  `doctor` and `--no-daemon`. Do not weaken a default or drop a proof test.
 - Notify audience is **founder**, not every operator.
 - `dockerSock` default is `none`. RW is invalid.
 

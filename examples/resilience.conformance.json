@@ -1,0 +1,24 @@
+{
+  "schema": "wellmanifest.hostguard/resilience/v1",
+  "product": "example-daemon",
+  "scope": "daemon",
+  "defaults": {
+    "storageFloorPercent": 5,
+    "storageFloorBytes": 2147483648,
+    "readinessDeadlineSeconds": 10,
+    "socketCheckIntervalSeconds": 60
+  },
+  "rules": {
+    "RES-001": {"status": "proven", "test": "tests/resilience/test_storage_floor.py"},
+    "RES-002": {"status": "proven", "test": "tests/resilience/test_enospc_state.py"},
+    "RES-003": {"status": "proven", "test": "tests/resilience/test_runtime_dir.py"},
+    "RES-004": {"status": "proven", "test": "tests/resilience/test_socket_selfheal.py"},
+    "RES-005": {"status": "proven", "test": "tests/resilience/test_ping_liveness.py"},
+    "RES-006": {"status": "proven", "test": "tests/resilience/test_bounded_wait.py"},
+    "RES-007": {"status": "proven", "test": "tests/resilience/test_stale_recovery.py"},
+    "RES-008": {"status": "proven", "test": "tests/resilience/test_child_reap.py"},
+    "RES-009": {"status": "proven", "test": "tests/resilience/test_caps.py"},
+    "RES-010": {"status": "waived", "waiver": {"ticket": "ticket-014", "reason": "single install channel until packaging ticket lands"}},
+    "RES-011": {"status": "proven", "test": "tests/resilience/test_doctor.py"}
+  }
+}
